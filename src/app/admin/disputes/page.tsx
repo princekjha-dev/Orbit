@@ -46,13 +46,18 @@ export default async function AdminDisputesPage() {
                   </div>
 
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="red">{d.type}</Badge>
+                    <Badge variant="red">{d.status}</Badge>
                     <span className="text-xs text-neutral-400">{new Date(d.createdAt).toLocaleDateString()}</span>
                   </div>
 
-                  <p className="text-sm font-medium text-neutral-900 mb-1">
-                    Project ID: <span className="text-neutral-500 font-normal">{d.projectId}</span>
+                  <p className="text-sm font-semibold text-neutral-900 mb-1">
+                    {d.subject}
                   </p>
+                  {d.projectId && (
+                    <p className="text-xs text-neutral-500 mb-1">
+                      Project ID: <span className="text-neutral-500 font-mono">{d.projectId}</span>
+                    </p>
+                  )}
 
                   <div className="p-3 bg-neutral-50 rounded-lg mt-2">
                     <p className="text-sm text-neutral-700">{d.description}</p>

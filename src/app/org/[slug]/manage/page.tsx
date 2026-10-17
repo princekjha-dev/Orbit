@@ -12,14 +12,15 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Manage Organization" };
 
-interface PageProps { params: { slug: string } }
+interface PageProps { params: Promise<{ slug: string }> }
 
 export default async function ManageOrgPage({ params }: PageProps) {
+  const { slug } = await params;
   const user = await requireAuth();
 
   const org = await prisma.organization.findFirst({
     where: {
-      slug: params.slug,
+      slug,
       isDeleted: false,
       members: { some: { userId: user.id!, role: { in: ["OWNER", "ADMIN"] } } },
     },
@@ -28,13 +29,13 @@ export default async function ManageOrgPage({ params }: PageProps) {
         include: { _count: { select: { applications: true } } } },
       projects: { where: { isDeleted: false }, orderBy: { createdAt: "desc" }, take: 10,
         include: { _count: { select: { applications: true } } } },
-      verification: { orderBy: { submittedAt: "desc" }, take: 1 },
+      verification: true,
     },
   });
 
   if (!org) notFound();
 
-  const latestVerification = org.verification[0];
+  const latestVerification = org.verification;
 
   return (
     <AppShell>

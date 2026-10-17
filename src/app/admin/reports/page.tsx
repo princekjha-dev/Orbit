@@ -10,7 +10,9 @@ export default async function AdminReportsPage() {
   const reports = await prisma.report.findMany({
     where: { status: "OPEN" },
     include: {
-      reporter: { select: { name: true, email: true } },
+      reportedBy: { select: { name: true, email: true } },
+      reportedUser: { select: { name: true, username: true } },
+      reportedOrg: { select: { name: true, slug: true } },
     },
     orderBy: { createdAt: "asc" },
     take: 30,
@@ -30,30 +32,38 @@ export default async function AdminReportsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {reports.map((report) => (
-            <Card key={report.id}>
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="red">{report.reason}</Badge>
-                    <Badge variant="neutral">{report.entityType}</Badge>
-                  </div>
-                  <p className="text-sm font-medium text-neutral-900 mb-1">
-                    Reported by: {report.reporter.name} ({report.reporter.email})
-                  </p>
-                  <p className="text-xs text-neutral-500 mb-2">
-                    {new Date(report.createdAt).toLocaleDateString()} · Entity ID: {report.entityId}
-                  </p>
-                  {report.description && (
-                    <div className="p-3 bg-neutral-50 rounded-lg">
-                      <p className="text-sm text-neutral-700">{report.description}</p>
+          {reports.map((report) => {
+            const targetLabel = report.reportedUser
+              ? `User: @${report.reportedUser.username}`
+              : report.reportedOrg
+              ? `Organization: ${report.reportedOrg.name}`
+              : "Platform entity";
+
+            return (
+              <Card key={report.id}>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="red">{report.reason}</Badge>
+                      <Badge variant="neutral">{targetLabel}</Badge>
                     </div>
-                  )}
+                    <p className="text-sm font-medium text-neutral-900 mb-1">
+                      Reported by: {report.reportedBy?.name ?? "Unknown"} ({report.reportedBy?.email ?? "N/A"})
+                    </p>
+                    <p className="text-xs text-neutral-500 mb-2">
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </p>
+                    {report.details && (
+                      <div className="p-3 bg-neutral-50 rounded-lg">
+                        <p className="text-sm text-neutral-700">{report.details}</p>
+                      </div>
+                    )}
+                  </div>
+                  <ReportActions reportId={report.id} />
                 </div>
-                <ReportActions reportId={report.id} />
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
