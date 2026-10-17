@@ -10,8 +10,6 @@
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 15 (App Router) |
 | Auth | NextAuth v5 |
 | Database | PostgreSQL + Prisma ORM |
 | Styling | Tailwind CSS |
