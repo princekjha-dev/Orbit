@@ -1,6 +1,5 @@
 # Orbit
 
-A serious entrepreneurship and employment platform connecting talent, ideas, projects, events, and real opportunities.
 
 ## Core Loop
 
