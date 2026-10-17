@@ -50,7 +50,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           placeholder="Search by name, email, or username..."
           className="flex-1 border border-neutral-300 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
           aria-label="Search users" />
-        <select name="role" defaultValue={searchParams.role || ""}
+        <select name="role" defaultValue={params.role || ""}
           className="border border-neutral-300 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
           aria-label="Filter by role">
           <option value="">All roles</option>
