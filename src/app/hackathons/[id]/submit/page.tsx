@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { AppShell } from "@/components/layout/app-shell";
 
 interface PageProps { params: { id: string } }
 
@@ -39,8 +38,7 @@ export default function HackathonSubmitPage({ params }: PageProps) {
   };
 
   return (
-    <AppShell>
-      <div className="p-6 lg:p-8 max-w-2xl mx-auto">
+    <div className="p-6 lg:p-8 max-w-2xl mx-auto">
         <Link href={`/hackathons/${params.id}`} className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 mb-6">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to team
@@ -73,6 +71,5 @@ export default function HackathonSubmitPage({ params }: PageProps) {
           </Card>
         )}
       </div>
-    </AppShell>
   );
 }

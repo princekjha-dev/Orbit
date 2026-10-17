@@ -40,7 +40,8 @@ export function PostOpportunityForm({ orgId, orgSlug }: PostOpportunityFormProps
 
   const onSubmit = async (data: FormData) => {
     setError("");
-    const res = await fetch(`/api/organizations/${orgId}/opportunities`, {
+    const target = orgSlug || orgId;
+    const res = await fetch(`/api/organizations/${target}/opportunities`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...data, skills }),

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { ProfileEditForm } from "@/components/profiles/profile-edit-form";
 import { ExperienceSection } from "@/components/profiles/experience-section";
 import { EducationSection } from "@/components/profiles/education-section";
+import { NotificationPreferencesSection } from "@/components/settings/notification-preferences-section";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -43,6 +44,8 @@ export default async function SettingsPage() {
           userId={user.id!}
           initialItems={profile?.education || []}
         />
+
+        <NotificationPreferencesSection />
       </div>
     </div>
   );

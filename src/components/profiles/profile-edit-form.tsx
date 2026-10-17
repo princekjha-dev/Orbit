@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { logout } from "@/lib/auth/logout";
 
 type FormData = z.infer<typeof profileSchema>;
 
@@ -166,7 +166,7 @@ export function ProfileEditForm({ userId, userName, userEmail, profile }: Profil
         <Button type="submit" loading={isSubmitting}>Save profile</Button>
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={() => logout("/login")}
           className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
         >
           <LogOut className="h-4 w-4" aria-hidden="true" />

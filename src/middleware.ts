@@ -1,14 +1,29 @@
 import { auth } from "@/lib/auth/config";
+import { updateSession } from "@/lib/supabase/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_ROUTES = ["/", "/login", "/signup", "/privacy", "/terms", "/safety"];
-const AUTH_ROUTES = ["/login", "/signup"];
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/auth/callback",
+  "/privacy",
+  "/terms",
+  "/safety",
+  "/verify",
+];
+
+const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 
 export async function middleware(request: NextRequest) {
+  // Sync Supabase SSR session cookies
+  const { response: supabaseResponse, user: supabaseUser } = await updateSession(request);
+
   const { pathname } = request.nextUrl;
 
-  // Allow public routes and static files
+  // Allow public routes and static assets
   if (
     PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/")) ||
     pathname.startsWith("/_next") ||
@@ -16,33 +31,40 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/favicon") ||
     pathname.match(/\.(png|jpg|jpeg|svg|ico|webp|css|js)$/)
   ) {
-    return NextResponse.next();
+    // If authenticated user tries to visit login/signup/forgot-password, redirect to dashboard
+    if (AUTH_ROUTES.includes(pathname)) {
+      const nextAuthSession = await auth();
+      if (nextAuthSession?.user || supabaseUser) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+    }
+    return supabaseResponse;
   }
 
-  const session = await auth();
+  // Check authentication across both NextAuth and Supabase SSR sessions
+  const nextAuthSession = await auth();
+  const isAuthenticated = !!nextAuthSession?.user || !!supabaseUser;
 
-  // Redirect unauthenticated users
-  if (!session?.user) {
+  // Redirect unauthenticated users to login
+  if (!isAuthenticated) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (AUTH_ROUTES.includes(pathname)) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
   // Admin route protection
-  if (pathname.startsWith("/admin") && (session.user as any).role !== "ADMIN") {
+  const isAdmin =
+    (nextAuthSession?.user as any)?.role === "ADMIN" ||
+    supabaseUser?.user_metadata?.role === "ADMIN" ||
+    supabaseUser?.email === "demo.admin@orbit.demo";
+
+  if (pathname.startsWith("/admin") && !isAdmin) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

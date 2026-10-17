@@ -6,7 +6,6 @@ import { ArrowLeft, Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge, ApplicationStatusBadge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { AppShell } from "@/components/layout/app-shell";
 import { ApplicationStatusSelect } from "@/components/opportunities/application-status-select";
 import { formatDate } from "@/lib/utils";
 import type { Metadata } from "next";
@@ -53,8 +52,7 @@ export default async function OpportunityApplicationsPage({ params }: PageProps)
   };
 
   return (
-    <AppShell>
-      <div className="p-6 lg:p-8 max-w-5xl mx-auto">
+    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <Link href={`/org/${opportunity.organization.slug}/manage`}
             className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 transition-colors">
@@ -139,6 +137,5 @@ export default async function OpportunityApplicationsPage({ params }: PageProps)
           </div>
         )}
       </div>
-    </AppShell>
   );
 }

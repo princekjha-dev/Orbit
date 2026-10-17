@@ -4,24 +4,32 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signupSchema } from "@/lib/validation/schemas";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { CheckCircle2, Mail } from "lucide-react";
 
-type SignupFormData = z.infer<typeof signupSchema>;
+const signupFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(["STUDENT", "FOUNDER"]),
+});
+
+type SignupFormData = z.infer<typeof signupFormSchema>;
 
 const roles = [
   {
     value: "STUDENT",
-    title: "Student / Job Seeker",
-    description: "Find opportunities, complete projects, build a track record",
+    title: "Student / Contributor",
+    description: "Discover opportunities, complete scoped projects, and build verifiable evidence.",
   },
   {
     value: "FOUNDER",
     title: "Founder / Organization",
-    description: "Post opportunities, run projects, build a verified team",
+    description: "Publish opportunities, run scoped projects, and manage verified teams.",
   },
 ];
 
@@ -29,6 +37,7 @@ export default function SignupPage() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string>("");
   const [selectedRole, setSelectedRole] = useState<"STUDENT" | "FOUNDER">("STUDENT");
+  const [verificationPendingEmail, setVerificationPendingEmail] = useState<string | null>(null);
 
   const {
     register,
@@ -36,26 +45,64 @@ export default function SignupPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
+    resolver: zodResolver(signupFormSchema),
     defaultValues: { role: "STUDENT" },
   });
 
   const onSubmit = async (data: SignupFormData) => {
     setServerError("");
+    setVerificationPendingEmail(null);
+
     try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+      const supabase = createClient();
+      const redirectUrl = `${window.location.origin}/auth/callback?next=/dashboard`;
+
+      // 1. Sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            name: data.name,
+            role: data.role,
+          },
+          emailRedirectTo: redirectUrl,
+        },
       });
-      const result = await res.json();
-      if (!res.ok) {
-        setServerError(result.error || "Something went wrong");
+
+      if (authError) {
+        setServerError(authError.message);
         return;
       }
-      router.push("/login?registered=1");
-    } catch {
-      setServerError("Network error. Please try again.");
+
+      // 2. Check if email verification is required
+      if (authData.user && !authData.session) {
+        setVerificationPendingEmail(data.email);
+        return;
+      }
+
+      // 3. If session is immediately available, initialize Orbit database profile
+      if (authData.session) {
+        const initRes = await fetch("/api/auth/init-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: data.name,
+            role: data.role,
+          }),
+        });
+
+        if (!initRes.ok) {
+          console.warn("Profile init warning: will resolve on next request.");
+        }
+
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        router.push("/login?registered=1");
+      }
+    } catch (err: any) {
+      setServerError(err?.message || "An unexpected error occurred during registration.");
     }
   };
 
@@ -71,98 +118,101 @@ export default function SignupPage() {
         </p>
       </div>
 
-      {/* Role selection */}
-      <div className="mb-6">
-        <p className="text-sm font-medium text-neutral-700 mb-2">I am a</p>
-        <div className="grid grid-cols-1 gap-2">
-          {roles.map((role) => (
-            <button
-              key={role.value}
-              type="button"
-              onClick={() => {
-                setSelectedRole(role.value as "STUDENT" | "FOUNDER");
-                setValue("role", role.value as "STUDENT" | "FOUNDER");
-              }}
-              className={`text-left p-3 rounded-lg border transition-colors ${
-                selectedRole === role.value
-                  ? "border-brand-500 bg-brand-50"
-                  : "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50"
-              }`}
-              aria-pressed={selectedRole === role.value}
-            >
-              <p className={`text-sm font-medium ${selectedRole === role.value ? "text-brand-700" : "text-neutral-900"}`}>
-                {role.title}
+      {verificationPendingEmail ? (
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <Mail className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h2 className="text-sm font-semibold text-neutral-900">Verify your email address</h2>
+              <p className="text-xs text-neutral-600 mt-1">
+                We sent a confirmation link to <span className="font-semibold text-neutral-900">{verificationPendingEmail}</span>.
+                Please check your inbox and confirm your address to sign in to Orbit.
               </p>
-              <p className="text-xs text-neutral-500 mt-0.5">{role.description}</p>
-            </button>
-          ))}
-        </div>
-        {errors.role && (
-          <p className="mt-1.5 text-xs text-danger-500">{errors.role.message}</p>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <Input
-          label="Full name"
-          type="text"
-          autoComplete="name"
-          required
-          error={errors.name?.message}
-          {...register("name")}
-        />
-        <Input
-          label="Email address"
-          type="email"
-          autoComplete="email"
-          required
-          error={errors.email?.message}
-          {...register("email")}
-        />
-        <Input
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          required
-          hint="At least 8 characters, one uppercase, one number"
-          error={errors.password?.message}
-          {...register("password")}
-        />
-        <Input
-          label="Confirm password"
-          type="password"
-          autoComplete="new-password"
-          required
-          error={errors.confirmPassword?.message}
-          {...register("confirmPassword")}
-        />
-
-        {serverError && (
-          <div className="rounded-lg bg-danger-50 border border-red-100 px-4 py-3" role="alert">
-            <p className="text-sm text-danger-500">{serverError}</p>
+            </div>
           </div>
-        )}
-
-        <Button
-          type="submit"
-          className="w-full"
-          loading={isSubmitting}
-        >
-          Create account
-        </Button>
-
-        <p className="text-xs text-neutral-500 text-center">
-          By creating an account you agree to our{" "}
-          <Link href="/terms" className="text-brand-600 hover:underline">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="text-brand-600 hover:underline">
-            Privacy Policy
+          <Link href="/login" className="block">
+            <Button variant="outline" className="w-full text-xs">
+              Go to sign in
+            </Button>
           </Link>
-          .
-        </p>
-      </form>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+          {/* Role selection */}
+          <div>
+            <span className="text-xs font-medium text-neutral-700 block mb-2">Account Type</span>
+            <div className="grid grid-cols-1 gap-2">
+              {roles.map((role) => (
+                <button
+                  key={role.value}
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole(role.value as "STUDENT" | "FOUNDER");
+                    setValue("role", role.value as "STUDENT" | "FOUNDER");
+                  }}
+                  className={`text-left p-3 rounded-lg border transition-colors ${
+                    selectedRole === role.value
+                      ? "border-neutral-900 bg-neutral-50"
+                      : "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/50"
+                  }`}
+                  aria-pressed={selectedRole === role.value}
+                >
+                  <p className="text-xs font-semibold text-neutral-900">{role.title}</p>
+                  <p className="text-[11px] text-neutral-500 mt-0.5">{role.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Input
+            label="Full name"
+            type="text"
+            autoComplete="name"
+            required
+            error={errors.name?.message}
+            {...register("name")}
+          />
+
+          <Input
+            label="Email address"
+            type="email"
+            autoComplete="email"
+            required
+            error={errors.email?.message}
+            {...register("email")}
+          />
+
+          <Input
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+            required
+            error={errors.password?.message}
+            {...register("password")}
+          />
+
+          {serverError && (
+            <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3" role="alert">
+              <p className="text-xs text-red-700">{serverError}</p>
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" loading={isSubmitting}>
+            Create account
+          </Button>
+
+          <p className="text-center text-[11px] text-neutral-400 mt-2">
+            By creating an account you agree to Orbit&apos;s{" "}
+            <Link href="/terms" className="underline hover:text-neutral-600">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline hover:text-neutral-600">
+              Privacy Policy
+            </Link>.
+          </p>
+        </form>
+      )}
     </>
   );
 }

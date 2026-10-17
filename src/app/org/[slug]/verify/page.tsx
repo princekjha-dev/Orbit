@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { AppShell } from "@/components/layout/app-shell";
 
 export default function VerifyOrgPage({ params }: { params: { slug: string } }) {
   const router = useRouter();
@@ -34,8 +33,7 @@ export default function VerifyOrgPage({ params }: { params: { slug: string } }) 
   };
 
   return (
-    <AppShell>
-      <div className="p-6 lg:p-8 max-w-2xl mx-auto">
+    <div className="p-6 lg:p-8 max-w-2xl mx-auto">
         <Link href={`/org/${params.slug}/manage`} className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 mb-6">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to manage
@@ -84,6 +82,5 @@ export default function VerifyOrgPage({ params }: { params: { slug: string } }) 
           </Card>
         )}
       </div>
-    </AppShell>
   );
 }

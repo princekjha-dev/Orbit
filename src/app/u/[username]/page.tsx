@@ -191,7 +191,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
                         <p className="text-sm font-medium text-neutral-900">{exp.title}</p>
                         <p className="text-xs text-neutral-500">{exp.company}</p>
                         <p className="text-xs text-neutral-400">
-                          {exp.startMonth}/{exp.startYear} – {exp.current ? "Present" : `${exp.endMonth}/${exp.endYear}`}
+                          {exp.startMonth}/{exp.startYear} - {exp.current ? "Present" : `${exp.endMonth}/${exp.endYear}`}
                         </p>
                         {exp.description && (
                           <p className="text-xs text-neutral-600 mt-1 line-clamp-2">{exp.description}</p>
@@ -219,7 +219,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-neutral-900">{edu.institution}</p>
                         {edu.degree && <p className="text-xs text-neutral-500">{edu.degree}{edu.field && `, ${edu.field}`}</p>}
-                        <p className="text-xs text-neutral-400">{edu.startYear} – {edu.current ? "Present" : edu.endYear || ""}</p>
+                        <p className="text-xs text-neutral-400">{edu.startYear} - {edu.current ? "Present" : edu.endYear || ""}</p>
                       </div>
                     </div>
                   ))}

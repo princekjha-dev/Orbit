@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { AppShell } from "@/components/layout/app-shell";
 import { JoinTeamButton } from "@/components/hackathons/join-team-button";
 import type { Metadata } from "next";
 
@@ -35,8 +34,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
   const isMember = !!membership;
 
   return (
-    <AppShell>
-      <div className="p-6 lg:p-8 max-w-4xl mx-auto">
+    <div className="p-6 lg:p-8 max-w-4xl mx-auto">
         <Link href="/hackathons" className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 mb-6">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to teams
@@ -148,6 +146,5 @@ export default async function TeamDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
-    </AppShell>
   );
 }

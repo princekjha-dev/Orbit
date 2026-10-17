@@ -10,9 +10,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ dis
   }
   const { action } = await req.json();
   const newStatus = action === "resolve" ? "RESOLVED" : "CLOSED";
-  await prisma.dispute.update({
-    where: { id: disputeId },
-    data: { status: newStatus, resolvedAt: new Date(), resolvedBy: session.user.id! },
-  });
+
+  await prisma.$transaction([
+    prisma.dispute.update({
+      where: { id: disputeId },
+      data: { status: newStatus, resolvedAt: new Date(), resolvedBy: session.user.id! },
+    }),
+    prisma.auditLog.create({
+      data: {
+        actorId: session.user.id!,
+        action: `dispute_${action}`,
+        entityType: "Dispute",
+        entityId: disputeId,
+      },
+    }),
+  ]);
+
   return NextResponse.json({ status: newStatus });
 }

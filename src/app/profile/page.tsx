@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Globe, MapPin, GraduationCap, Briefcase, Link as LinkIcon, Edit, CheckCircle } from "lucide-react";
 import { GithubIcon, LinkedinIcon } from "@/components/ui/icons";
 import Link from "next/link";
+import { SkillEvidenceManager } from "@/components/profiles/skill-evidence-manager";
 import { formatDate } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -17,33 +18,59 @@ export const metadata: Metadata = { title: "My Profile" };
 export default async function ProfilePage() {
   const user = await requireAuth();
 
-  const profile = await prisma.profile.findUnique({
-    where: { userId: user.id! },
-    include: {
-      skills: { include: { skill: true } },
-      education: { orderBy: { startYear: "desc" } },
-      experience: { orderBy: { startYear: "desc" } },
-    },
-  });
-
-  const verifiedWork = await prisma.verifiedWorkRecord.findMany({
-    where: { userId: user.id! },
-    orderBy: { completionDate: "desc" },
-    take: 5,
-  });
+  const [profile, verifiedWork, skillEvidences, portfolio] = await Promise.all([
+    prisma.profile.findUnique({
+      where: { userId: user.id! },
+      include: {
+        skills: { include: { skill: true } },
+        education: { orderBy: { startYear: "desc" } },
+        experience: { orderBy: { startYear: "desc" } },
+      },
+    }),
+    prisma.verifiedWorkRecord.findMany({
+      where: { userId: user.id! },
+      orderBy: { completionDate: "desc" },
+      take: 5,
+    }),
+    prisma.skillEvidence.findMany({
+      where: { userId: user.id! },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.portfolio.findUnique({
+      where: { userId: user.id! },
+    }),
+  ]);
 
   if (!profile) redirect("/settings");
 
   return (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">My profile</h1>
-        <Link href="/settings">
-          <Button variant="outline" size="sm">
-            <Edit className="h-4 w-4" aria-hidden="true" />
-            Edit profile
-          </Button>
-        </Link>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">My profile</h1>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Evidence-based professional profile and verified history.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href={`/p/${portfolio?.slug || (user as any).username || user.id}`}>
+            <Button variant="outline" size="sm">
+              <Globe className="h-4 w-4 mr-1.5" />
+              Public Portfolio
+            </Button>
+          </Link>
+          <Link href="/portfolio/builder">
+            <Button variant="outline" size="sm">
+              Portfolio Builder
+            </Button>
+          </Link>
+          <Link href="/settings">
+            <Button variant="outline" size="sm">
+              <Edit className="h-4 w-4 mr-1.5" aria-hidden="true" />
+              Edit profile
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -112,6 +139,12 @@ export default async function ProfilePage() {
             </Card>
           )}
 
+          {/* Skill Evidence System (V3) */}
+          <SkillEvidenceManager
+            initialEvidences={skillEvidences as any}
+            profileSkills={profile.skills.map((s) => s.skill.name)}
+          />
+
           {/* Verified Work */}
           <Card>
             <div className="flex items-center justify-between mb-4">
@@ -172,7 +205,7 @@ export default async function ProfilePage() {
                       <p className="text-sm font-medium text-neutral-900">{exp.title}</p>
                       <p className="text-xs text-neutral-500">{exp.company}</p>
                       <p className="text-xs text-neutral-400">
-                        {exp.startMonth}/{exp.startYear} – {exp.current ? "Present" : `${exp.endMonth}/${exp.endYear}`}
+                        {exp.startMonth}/{exp.startYear} - {exp.current ? "Present" : `${exp.endMonth}/${exp.endYear}`}
                         {exp.location && ` · ${exp.location}`}
                       </p>
                       {exp.description && (
@@ -202,7 +235,7 @@ export default async function ProfilePage() {
                       <p className="text-sm font-medium text-neutral-900">{edu.institution}</p>
                       {edu.degree && <p className="text-xs text-neutral-500">{edu.degree}{edu.field && `, ${edu.field}`}</p>}
                       <p className="text-xs text-neutral-400">
-                        {edu.startYear} – {edu.current ? "Present" : edu.endYear || ""}
+                        {edu.startYear} - {edu.current ? "Present" : edu.endYear || ""}
                       </p>
                     </div>
                   </div>

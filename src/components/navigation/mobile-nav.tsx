@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 import { SidebarNav } from "./sidebar-nav";
 import { Avatar } from "@/components/ui/avatar";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { logout } from "@/lib/auth/logout";
 
 interface MobileNavProps {
   role?: string;
@@ -65,7 +65,7 @@ export function MobileNav({ role, user }: MobileNavProps) {
                   </div>
                 </div>
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={() => logout("/login")}
                   className="w-full text-left text-sm text-neutral-600 hover:text-neutral-900 py-2 px-3 rounded-lg hover:bg-neutral-100 transition-colors"
                 >
                   Sign out

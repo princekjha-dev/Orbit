@@ -33,7 +33,8 @@ export function PostProjectForm({ orgId, orgSlug }: { orgId: string; orgSlug: st
 
   const onSubmit = async (data: FormData) => {
     setError("");
-    const res = await fetch(`/api/organizations/${orgId}/projects`, {
+    const target = orgSlug || orgId;
+    const res = await fetch(`/api/organizations/${target}/projects`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...data, skills }),

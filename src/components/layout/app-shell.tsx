@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth/config";
+import { getCurrentUser } from "@/lib/auth/helpers";
 import { SidebarNav } from "@/components/navigation/sidebar-nav";
 import { Avatar } from "@/components/ui/avatar";
 import { MobileNav } from "@/components/navigation/mobile-nav";
+import { DemoIndicator } from "@/components/navigation/demo-indicator";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-  const user = session?.user;
+  const user = await getCurrentUser();
+  const activeRole = (user as any)?.orbitRole || (user as any)?.role;
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -24,14 +26,19 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
+        {/* Demo Persona Indicator & Quick Switcher */}
+        {user && (
+          <DemoIndicator email={user.email} orbitRole={(user as any)?.orbitRole} />
+        )}
+
         {/* Nav */}
-        <div className="flex-1 overflow-y-auto px-3 py-4">
-          <SidebarNav role={(user as any)?.role} />
+        <div className="flex-1 overflow-y-auto px-3 py-2">
+          <SidebarNav role={activeRole} />
         </div>
 
-        {/* User */}
+        {/* User Card & Logout */}
         {user && (
-          <div className="px-3 py-4 border-t border-neutral-100">
+          <div className="px-3 py-3 border-t border-neutral-100 space-y-1">
             <Link
               href="/profile"
               className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
@@ -41,13 +48,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                 name={user.name || "User"}
                 size="sm"
               />
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-neutral-900 truncate">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-neutral-900 truncate">
                   {user.name}
                 </p>
-                <p className="text-xs text-neutral-500 truncate">{user.email}</p>
+                <p className="text-[11px] text-neutral-500 truncate">{user.email}</p>
               </div>
             </Link>
+            <SignOutButton />
           </div>
         )}
       </aside>
@@ -62,7 +70,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             Orbit
           </span>
         </div>
-        <MobileNav role={(user as any)?.role} user={user} />
+        <MobileNav role={activeRole} user={user} />
       </header>
 
       {/* Main Content */}
