@@ -12,7 +12,6 @@
 | Layer | Technology |
 | Auth | NextAuth v5 |
 | Database | PostgreSQL + Prisma ORM |
-| Styling | Tailwind CSS |
 | Forms | React Hook Form + Zod |
 | UI Icons | Lucide React |
 
