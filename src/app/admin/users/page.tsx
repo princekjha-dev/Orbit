@@ -7,18 +7,19 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Users | Admin" };
 
-interface PageProps { searchParams: { q?: string; role?: string } }
+interface PageProps { searchParams: Promise<{ q?: string; role?: string }> }
 
 export default async function AdminUsersPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const where: any = {};
-  if (searchParams.q) {
+  if (params.q) {
     where.OR = [
-      { name: { contains: searchParams.q, mode: "insensitive" } },
-      { email: { contains: searchParams.q, mode: "insensitive" } },
-      { username: { contains: searchParams.q, mode: "insensitive" } },
+      { name: { contains: params.q, mode: "insensitive" } },
+      { email: { contains: params.q, mode: "insensitive" } },
+      { username: { contains: params.q, mode: "insensitive" } },
     ];
   }
-  if (searchParams.role) where.role = searchParams.role;
+  if (params.role) where.role = params.role;
 
   const users = await prisma.user.findMany({
     where,
@@ -33,7 +34,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       image: true,
       isSuspended: true,
       createdAt: true,
-      _count: { select: { opportunityApplications: true } },
+      _count: { select: { opportunityApps: true } },
     },
   });
 
@@ -45,7 +46,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       </div>
 
       <form method="get" className="flex gap-3 mb-6">
-        <input name="q" defaultValue={searchParams.q}
+        <input name="q" defaultValue={params.q}
           placeholder="Search by name, email, or username..."
           className="flex-1 border border-neutral-300 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
           aria-label="Search users" />
