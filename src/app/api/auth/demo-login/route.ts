@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const demoConfig = getDemoAccountByRole(role);
-    const demoPassword = process.env.DEMO_ACCOUNT_PASSWORD || "OrbitDemo@2025!";
+    const demoPassword = process.env.DEMO_ACCOUNT_PASSWORD || "OrbitDemo@2026!";
 
     // 2. Attempt Supabase Auth sign-in using server client (with timeout)
     let authResult: any = null;

@@ -15,6 +15,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import { getDotAvatar } from "@/lib/avatars";
+
 export function CoreLoopStepper() {
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -31,6 +33,7 @@ export function CoreLoopStepper() {
       num: 2,
       name: "Verify (Avis)",
       icon: ShieldCheck,
+      dot: "avis",
       description: "Perform DNS TXT challenge resolution and recruiter email domain matching. Zero fake trust.",
       targetUrl: "/mod/avis",
       badge: "DOT 1: AVIS",
@@ -39,6 +42,7 @@ export function CoreLoopStepper() {
       num: 3,
       name: "Prove (Quill)",
       icon: Award,
+      dot: "quill",
       description: "Submit assessment artifacts evaluated on standardized rubrics; hash with SHA-256.",
       targetUrl: "/mod/quill",
       badge: "DOT 3: QUILL",
@@ -47,6 +51,7 @@ export function CoreLoopStepper() {
       num: 4,
       name: "Match (Scout)",
       icon: Sparkles,
+      dot: "scout",
       description: "Compute auditable 5-signal match scores and allocate balanced pod slots without duplicate assignments.",
       targetUrl: "/mod/scout",
       badge: "DOT 2: SCOUT",
@@ -55,6 +60,7 @@ export function CoreLoopStepper() {
       num: 5,
       name: "Collaborate (Relay)",
       icon: MessageSquare,
+      dot: "relay",
       description: "Collaborate in monitored pod channels with live off-platform contact detection and Community Notes.",
       targetUrl: "/mod/relay",
       badge: "DOT 4: RELAY",
@@ -110,9 +116,20 @@ export function CoreLoopStepper() {
           <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
-                  <Icon className="w-6 h-6" />
-                </div>
+                {step.dot ? (
+                  <div className="w-12 h-12 rounded-xl overflow-hidden border border-neutral-200 flex items-center justify-center shadow-xs shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getDotAvatar(step.dot)}
+                      alt={step.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                )}
                 <div>
                   <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
                     {step.badge}

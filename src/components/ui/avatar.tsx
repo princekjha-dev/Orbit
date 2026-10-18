@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/lib/utils";
+import { getAvatarForName } from "@/lib/avatars";
 
 interface AvatarProps {
   src?: string | null;
@@ -17,13 +18,13 @@ const sizes = {
 };
 
 export function Avatar({ src, name, size = "md", className }: AvatarProps) {
-  const initials = getInitials(name);
+  const resolvedSrc = src || getAvatarForName(name);
 
-  if (src) {
+  if (resolvedSrc) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={src}
+        src={resolvedSrc}
         alt={name}
         className={cn(
           "rounded-full object-cover bg-neutral-100 flex-shrink-0",
@@ -33,6 +34,8 @@ export function Avatar({ src, name, size = "md", className }: AvatarProps) {
       />
     );
   }
+
+  const initials = getInitials(name);
 
   return (
     <div

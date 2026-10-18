@@ -65,11 +65,51 @@ export default async function MessagesPage() {
     }
   );
 
+  // Merge with synthetic Indian demo conversations
+  const { INITIAL_DEMO_CONVERSATIONS } = await import("@/lib/demo/demo-messages");
+  const userRole = (user as any).orbitRole || "TALENT";
+  const userDemoId =
+    userRole === "PLATFORM_ADMIN"
+      ? "demo-admin"
+      : userRole === "COMMUNITY_ORGANIZER"
+      ? "demo-organizer"
+      : userRole === "ORGANIZATION_ADMIN"
+      ? "demo-organization"
+      : `demo-${userRole.toLowerCase()}`;
+
+  const matchingDemoConvs = INITIAL_DEMO_CONVERSATIONS.filter(
+    (c) =>
+      c.participantIds.includes(user.id!) ||
+      c.participantIds.includes(userDemoId) ||
+      user.email?.toLowerCase().includes("orbit.demo")
+  ).map((c) => {
+    const other = c.participants.find((p) => p.id !== user.id && p.id !== userDemoId) || c.participants[0];
+    const last = c.messages[c.messages.length - 1];
+    return {
+      id: c.id,
+      isGroup: c.isGroup,
+      name: c.title,
+      lastReadAt: new Date(),
+      updatedAt: new Date(c.updatedAt),
+      displayName: c.title,
+      displayImage: null,
+      lastMsg: last ? { content: last.content, createdAt: new Date(last.createdAt) } : null,
+      isUnread: false,
+    };
+  });
+
+  const allConversations = [...formattedConversations];
+  for (const dc of matchingDemoConvs) {
+    if (!allConversations.some((c) => c.id === dc.id)) {
+      allConversations.push(dc);
+    }
+  }
+
   return (
     <MessagesHub
       currentUserId={user.id!}
       currentUserName={user.name || "Member"}
-      conversations={formattedConversations}
+      conversations={allConversations}
     />
   );
 }

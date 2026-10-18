@@ -106,7 +106,9 @@ export async function TalentDashboard({
       ),
     ]);
 
-    if (results && (results[0].length > 0 || results[1].length > 0 || results[2].length > 0)) {
+    const isDemoAccount = userId.startsWith("demo-") || userId.includes("demo");
+
+    if (results) {
       [
         applications,
         savedOpps,
@@ -116,8 +118,8 @@ export async function TalentDashboard({
         verifiedWork,
         skillEvidence,
       ] = results;
-    } else {
-      // Empty DB or demo user: provide rich demo dataset
+    } else if (isDemoAccount) {
+      // Demo accounts running offline
       isDemoOffline = true;
       const mock = getTalentMockData();
       applications = mock.applications;
@@ -129,15 +131,18 @@ export async function TalentDashboard({
       skillEvidence = mock.skillEvidence;
     }
   } catch {
-    isDemoOffline = true;
-    const mock = getTalentMockData();
-    applications = mock.applications;
-    savedOpps = mock.savedOpps;
-    activeProjects = mock.activeProjects;
-    upcomingEvents = mock.upcomingEvents;
-    mentorshipSessions = mock.mentorshipSessions;
-    verifiedWork = mock.verifiedWork;
-    skillEvidence = mock.skillEvidence;
+    const isDemoAccount = userId.startsWith("demo-") || userId.includes("demo");
+    if (isDemoAccount) {
+      isDemoOffline = true;
+      const mock = getTalentMockData();
+      applications = mock.applications;
+      savedOpps = mock.savedOpps;
+      activeProjects = mock.activeProjects;
+      upcomingEvents = mock.upcomingEvents;
+      mentorshipSessions = mock.mentorshipSessions;
+      verifiedWork = mock.verifiedWork;
+      skillEvidence = mock.skillEvidence;
+    }
   }
 
   const firstName = name ? name.split(" ")[0] : "Candidate";

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/helpers";
 import { prisma } from "@/lib/db";
 import { DotChatView } from "@/components/chat/dot-chat-view";
+import { getDotAvatar } from "@/lib/avatars";
 import {
   ShieldCheck,
   Compass,
@@ -196,8 +197,13 @@ export default async function OrbitModHomePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`h-10 w-10 rounded-lg bg-gradient-to-tr ${dot.color} flex items-center justify-center text-white shadow-xs`}>
-                        <Icon className="h-5 w-5" />
+                      <div className="h-10 w-10 rounded-xl overflow-hidden border border-neutral-200 shadow-xs flex items-center justify-center flex-shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={getDotAvatar(dot.id)}
+                          alt={dot.name}
+                          className="h-full w-full object-cover"
+                        />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">

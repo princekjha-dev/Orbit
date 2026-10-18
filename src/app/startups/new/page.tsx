@@ -140,7 +140,7 @@ export default function NewStartupPage() {
                 required
                 value={formData.name}
                 onChange={handleNameChange}
-                placeholder="e.g. Aether Dynamics"
+                placeholder="e.g. Nexora Labs"
                 className="w-full px-3 py-2 text-sm bg-neutral-50 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-neutral-900"
               />
             </div>
@@ -158,7 +158,7 @@ export default function NewStartupPage() {
                   required
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="aether-dynamics"
+                  placeholder="nexora-labs"
                   className="w-full px-3 py-2 text-sm bg-neutral-50 border border-neutral-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-neutral-900"
                 />
               </div>

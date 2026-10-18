@@ -132,6 +132,66 @@ const alexAffiliationRecord: VerificationRecordData = {
 // Seed with multiple lookup keys (full resource prefix + raw ID)
 inMemoryVerificationRecords.set("organization_apex-innovations-demo", apexRecord);
 inMemoryVerificationRecords.set("apex-innovations-demo", apexRecord);
+inMemoryVerificationRecords.set("organization_astra-digital", {
+  id: "rec_org_astra_01",
+  resourceType: "ORGANIZATION",
+  resourceId: "astra-digital",
+  resourceName: "Astra Digital Technologies (DEMO)",
+  state: "VERIFIED",
+  evidence: [
+    {
+      id: "ev_dns_astra_01",
+      type: "DNS_TXT",
+      source: "dns.promises.resolveTxt",
+      value: "orbit-verification-astra-9f82d1",
+      checkedAt: new Date(Date.now() - 3600000).toISOString(),
+      isVerified: true,
+      metadata: { host: "_orbit-challenge.astradigital.in" },
+    },
+  ],
+  reasons: [
+    {
+      code: "DNS_DOMAIN_MATCH",
+      message: "Confirmed root domain ownership via cryptographic DNS TXT record",
+      severity: "INFO",
+      evidenceRef: "ev_dns_astra_01",
+    },
+  ],
+  reviewerId: "admin_auto_dns",
+  checkedAt: new Date(Date.now() - 3600000).toISOString(),
+  version: 1,
+});
+inMemoryVerificationRecords.set("astra-digital", inMemoryVerificationRecords.get("organization_astra-digital")!);
+inMemoryVerificationRecords.set("organization_nexora-labs", {
+  id: "rec_org_nexora_01",
+  resourceType: "ORGANIZATION",
+  resourceId: "nexora-labs",
+  resourceName: "Nexora Labs (DEMO)",
+  state: "VERIFIED",
+  evidence: [
+    {
+      id: "ev_dns_nexora_01",
+      type: "DNS_TXT",
+      source: "dns.promises.resolveTxt",
+      value: "orbit-verification-nexora-4c28e9",
+      checkedAt: new Date(Date.now() - 3600000).toISOString(),
+      isVerified: true,
+      metadata: { host: "_orbit-challenge.nexoralabs.ai" },
+    },
+  ],
+  reasons: [
+    {
+      code: "DNS_DOMAIN_MATCH",
+      message: "Confirmed root domain ownership via cryptographic DNS TXT record",
+      severity: "INFO",
+      evidenceRef: "ev_dns_nexora_01",
+    },
+  ],
+  reviewerId: "admin_auto_dns",
+  checkedAt: new Date(Date.now() - 3600000).toISOString(),
+  version: 1,
+});
+inMemoryVerificationRecords.set("nexora-labs", inMemoryVerificationRecords.get("organization_nexora-labs")!);
 inMemoryVerificationRecords.set("organization_hypergrowth-stealth-demo", hypergrowthRecord);
 inMemoryVerificationRecords.set("hypergrowth-stealth-demo", hypergrowthRecord);
 inMemoryVerificationRecords.set("recruiter_affiliation_candidate-alex-chen", alexAffiliationRecord);

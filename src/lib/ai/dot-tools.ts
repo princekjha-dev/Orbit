@@ -55,39 +55,49 @@ export async function toolSearchOpportunities(
     []
   );
 
-  // If DB returned nothing or is offline, provide real seeded opportunities
-  const realResults =
-    opportunities && opportunities.length > 0
-      ? opportunities
-      : [
-          {
-            id: "opp-seed-1",
-            title: "Frontend Systems Engineer (React & TypeScript)",
-            type: "INTERNSHIP",
-            workMode: "REMOTE",
-            compensation: "$3,500/mo",
-            organization: { name: "Apex Systems Labs", slug: "apex-systems", isVerified: true },
-            skills: [{ skill: { name: "React" } }, { skill: { name: "TypeScript" } }],
-          },
-          {
-            id: "opp-seed-2",
-            title: "Distributed Protocol Contributor",
-            type: "PAID_PROJECT",
-            workMode: "REMOTE",
-            compensation: "$5,000 bounty",
-            organization: { name: "Orbit Infrastructure", slug: "orbit-infra", isVerified: true },
-            skills: [{ skill: { name: "TypeScript" } }, { skill: { name: "PostgreSQL" } }],
-          },
-          {
-            id: "opp-seed-3",
-            title: "Next.js Full-Stack Developer",
-            type: "JOB",
-            workMode: "HYBRID",
-            compensation: "$85,000 - $110,000",
-            organization: { name: "Nexus Innovations", slug: "nexus-innovations", isVerified: true },
-            skills: [{ skill: { name: "Next.js" } }, { skill: { name: "Tailwind CSS" } }],
-          },
-        ];
+  // Merge with any in-memory store opportunities
+  const inMemoryOpps = Array.from(inMemoryStore.opportunities?.values() || []).filter(
+    (o: any) => o.isActive && !o.isDeleted
+  );
+  const combined = [...(opportunities || [])];
+  for (const mo of inMemoryOpps) {
+    if (!combined.some((o) => o.id === mo.id)) {
+      combined.push(mo);
+    }
+  }
+
+  const realResults = combined.length > 0 ? combined : [
+    {
+      id: "demo-opp-frontend-intern",
+      title: "Frontend Engineer Intern",
+      type: "INTERNSHIP",
+      workMode: "HYBRID",
+      location: "Bengaluru, Karnataka (Hybrid)",
+      compensation: "₹4 LPA – ₹6 LPA",
+      organization: { name: "Nexora Labs", slug: "nexora-labs", isVerified: true },
+      skills: [{ skill: { name: "React" } }, { skill: { name: "TypeScript" } }, { skill: { name: "Next.js" } }],
+    },
+    {
+      id: "demo-opp-ai-intern",
+      title: "AI Engineering Intern",
+      type: "INTERNSHIP",
+      workMode: "REMOTE",
+      location: "Remote (India)",
+      compensation: "₹5 LPA – ₹8 LPA",
+      organization: { name: "Nexora Labs", slug: "nexora-labs", isVerified: true },
+      skills: [{ skill: { name: "Python" } }, { skill: { name: "AI/ML" } }, { skill: { name: "FastAPI" } }],
+    },
+    {
+      id: "demo-opp-fullstack-dev",
+      title: "Full Stack Developer",
+      type: "JOB",
+      workMode: "REMOTE",
+      location: "Pune / Remote",
+      compensation: "₹10 LPA – ₹16 LPA",
+      organization: { name: "Astra Digital Technologies", slug: "astra-digital", isVerified: true },
+      skills: [{ skill: { name: "TypeScript" } }, { skill: { name: "React" } }, { skill: { name: "PostgreSQL" } }],
+    },
+  ];
 
   // Filter by query / skills if specified
   const filtered = realResults.filter((opp: any) => {
@@ -173,31 +183,31 @@ export async function toolSearchOrganizations(
       ? orgs
       : [
           {
-            id: "org-1",
-            name: "Apex Systems Labs",
-            slug: "apex-systems",
-            industry: "Distributed Systems & Cloud",
-            website: "https://apexsystems.dev",
+            id: "demo-org-nexora",
+            name: "Nexora Labs",
+            slug: "nexora-labs",
+            industry: "AI / SaaS",
+            website: "https://nexoralabs.ai",
             isVerified: true,
-            contactEmail: "talent@apexsystems.dev",
+            contactEmail: "riya@nexoralabs.ai",
           },
           {
-            id: "org-2",
-            name: "Orbit Infrastructure",
-            slug: "orbit-infra",
-            industry: "Developer Tooling",
-            website: "https://orbit.dev",
+            id: "demo-org-astra",
+            name: "Astra Digital Technologies",
+            slug: "astra-digital",
+            industry: "Enterprise Software & Cloud Platforms",
+            website: "https://astradigital.in",
             isVerified: true,
-            contactEmail: "founders@orbit.dev",
+            contactEmail: "karan.verma@astradigital.in",
           },
           {
-            id: "org-3",
-            name: "HyperScale AI",
-            slug: "hyperscale-ai",
-            industry: "Machine Learning & Ops",
-            website: "https://hyperscale.ai",
+            id: "demo-org-ibn",
+            name: "India Builders Network",
+            slug: "india-builders-network",
+            industry: "Developer Community & Hackathons",
+            website: "https://indiabuilders.network",
             isVerified: true,
-            contactEmail: "jobs@hyperscale.ai",
+            contactEmail: "community@indiabuilders.network",
           },
         ];
 
@@ -220,20 +230,28 @@ export async function toolDraftColdEmail(
   params: { companySlug: string; position?: string; userPitch?: string }
 ): Promise<ToolResult> {
   const draftId = `draft-${Date.now()}`;
-  const companyName =
-    params.companySlug === "apex-systems"
-      ? "Apex Systems Labs"
-      : params.companySlug === "orbit-infra"
-      ? "Orbit Infrastructure"
-      : "Engineering Team";
+  const isAstra = params.companySlug.includes("astra");
+  const isMentor = params.companySlug.includes("ananya") || params.companySlug.includes("mentor");
+  
+  const companyName = isAstra
+    ? "Astra Digital Technologies"
+    : isMentor
+    ? "Dr. Ananya Iyer"
+    : "Nexora Labs";
 
-  const targetEmail =
-    params.companySlug === "apex-systems"
-      ? "talent@apexsystems.dev"
-      : "founders@orbit.dev";
+  const targetEmail = isAstra
+    ? "karan.verma@astradigital.in"
+    : isMentor
+    ? "ananya.iyer@orbit.demo"
+    : "riya@nexoralabs.ai";
 
-  const subject = `Inquiry regarding ${params.position || "Software Engineering Opportunities"} — ${ctx.name || "Candidate"}`;
-  const body = `Hi ${companyName} team,\n\nI have been following your recent engineering work and wanted to reach out directly. I specialize in TypeScript, modern web architecture, and distributed workflows.\n\n${params.userPitch || "I would love to learn more about upcoming opportunities or scoped projects where I can contribute to your roadmap."}\n\nYou can review my verified proof-of-work and skills on Orbit here: ${process.env.NEXT_PUBLIC_APP_URL || "https://orbit.app"}/u/${ctx.name?.toLowerCase().replace(/\s+/g, "") || "profile"}\n\nBest regards,\n${ctx.name || "Orbit Member"}`;
+  const subject = isMentor
+    ? `Mentorship Inquiry regarding AI Product & Architecture — ${ctx.name || "Aarav Sharma"}`
+    : `Inquiry regarding ${params.position || "Software Engineering Opportunities"} — ${ctx.name || "Candidate"}`;
+
+  const body = isMentor
+    ? `Dear Dr. Ananya,\n\nI am reaching out regarding guidance in production AI agent architectures. As a final-year CS student and builder of the AI Career Copilot in Bengaluru, I have developed vector retrieval pipelines with Next.js 15 and FastAPI.\n\nI would value your feedback on our evaluation rubrics and transition to scalable agent memory.\n\nYou can review my proof of work here: https://orbit.demo/profile\n\nBest regards,\n${ctx.name || "Aarav Sharma"}`
+    : `Dear ${companyName} team,\n\nI have been following your engineering milestones on Orbit and wanted to reach out directly. I specialize in Next.js 15, TypeScript, and AI systems development.\n\n${params.userPitch || "I would love to learn more about upcoming engineering opportunities or scoped deliverables where I can contribute."}\n\nYou can review my verified proof of work and portfolio on Orbit: https://orbit.demo/profile\n\nBest regards,\n${ctx.name || "Aarav Sharma"}`;
 
   return {
     toolName: "draftColdEmail",
@@ -258,31 +276,92 @@ export async function toolConfirmAndSendEmail(
   params: { draftId: string; recipient: string; subject: string; body: string; confirmed: boolean }
 ): Promise<ToolResult> {
   if (!params.confirmed) {
+    const cancelledRecord = {
+      id: `outreach-${Date.now()}`,
+      userId: ctx.userId,
+      recipient: params.recipient,
+      subject: params.subject,
+      body: params.body,
+      status: "SKIPPED" as const,
+      createdAt: new Date().toISOString(),
+    };
+    inMemoryStore.emailOutbox.push(cancelledRecord);
+
     return {
       toolName: "confirmAndSendEmail",
       success: false,
-      message: "Cold email dispatch was cancelled by the user. No email was sent.",
+      message: "Outreach dispatch was skipped by user request. Status marked as SKIPPED. No external message was sent.",
+      data: { status: "SKIPPED" },
     };
   }
 
-  // Record into outbox
+  let sendStatus: "SENT" | "APPROVED" | "FAILED" = "APPROVED";
+  let statusMessage = "";
+  let providerId: string | undefined = undefined;
+
+  // Verify external email provider configuration (Resend)
+  const resendApiKey = process.env.RESEND_API_KEY;
+
+  if (resendApiKey) {
+    try {
+      const resendRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: process.env.EMAIL_FROM || "noreply@orbit.app",
+          to: [params.recipient],
+          subject: params.subject,
+          text: params.body,
+        }),
+      });
+
+      if (resendRes.ok) {
+        const resendData = await resendRes.json();
+        sendStatus = "SENT";
+        providerId = resendData?.id;
+        statusMessage = `Cold email successfully dispatched to ${params.recipient} and confirmed by provider (ID: ${providerId || "confirmed"}).`;
+      } else {
+        sendStatus = "FAILED";
+        const errJson = await resendRes.json().catch(() => ({}));
+        statusMessage = `Email provider rejected message dispatch: ${errJson?.message || "Delivery rejected"}. Status marked as FAILED.`;
+      }
+    } catch (err: any) {
+      sendStatus = "FAILED";
+      statusMessage = `Provider communication error during dispatch: ${err?.message || "Network error"}. Status marked as FAILED.`;
+    }
+  } else {
+    // Resend API is not configured; in demo environment, record APPROVED -> SENT with explicit demo completion
+    sendStatus = "SENT";
+    statusMessage = `Demo send completed! Outreach message to ${params.recipient} was approved and logged in the demo outbox.`;
+  }
+
   const outboxItem = {
     id: `email-${Date.now()}`,
     userId: ctx.userId,
     recipient: params.recipient,
     subject: params.subject,
     body: params.body,
-    sentAt: new Date().toISOString(),
-    status: "SENT" as const,
+    sentAt: sendStatus === "SENT" ? new Date().toISOString() : undefined,
+    status: sendStatus,
+    providerMessageId: providerId || "demo-dispatch",
   };
 
   inMemoryStore.emailOutbox.push(outboxItem);
 
   return {
     toolName: "confirmAndSendEmail",
-    success: true,
-    message: `Cold email successfully dispatched to ${params.recipient} and recorded in your activity log.`,
-    data: { emailId: outboxItem.id, sentAt: outboxItem.sentAt },
+    success: sendStatus === "SENT",
+    message: statusMessage,
+    data: {
+      outreachId: outboxItem.id,
+      status: sendStatus,
+      recipient: params.recipient,
+      sentAt: outboxItem.sentAt,
+      providerMessageId: providerId || "demo-dispatch",
+    },
   };
 }
 
@@ -301,29 +380,38 @@ export async function toolSearchEvents(
     []
   );
 
-  const realEvents =
-    events && events.length > 0
-      ? events
-      : [
-          {
-            id: "evt-seed-1",
-            title: "Orbit Global Hackathon 2026",
-            type: "HACKATHON",
-            format: "ONLINE",
-            startDate: new Date(Date.now() + 86400000 * 7).toISOString(),
-            isFree: true,
-            organizerName: "Orbit Community",
-          },
-          {
-            id: "evt-seed-2",
-            title: "Distributed Systems Architecture Meetup",
-            type: "TECH_MEETUP",
-            format: "HYBRID",
-            startDate: new Date(Date.now() + 86400000 * 14).toISOString(),
-            isFree: true,
-            organizerName: "Systems Engineers Guild",
-          },
-        ];
+  const realEvents = events && events.length > 0 ? events : [
+    {
+      id: "demo-hack-buildathon",
+      title: "Orbit India Buildathon 2026",
+      type: "HACKATHON",
+      format: "ONLINE",
+      startDate: new Date(Date.now() + 86400000 * 10).toISOString(),
+      isFree: true,
+      organizerName: "India Builders Network",
+      location: "Online (Pan-India)",
+    },
+    {
+      id: "demo-ev-ai-meetup",
+      title: "India AI Builders Meetup",
+      type: "MEETUP",
+      format: "HYBRID",
+      startDate: new Date(Date.now() + 86400000 * 12).toISOString(),
+      isFree: true,
+      organizerName: "India Builders Network",
+      location: "Bengaluru, Karnataka",
+    },
+    {
+      id: "demo-hack-bengaluru-ai",
+      title: "Bengaluru AI Hack",
+      type: "HACKATHON",
+      format: "HYBRID",
+      startDate: new Date(Date.now() + 86400000 * 20).toISOString(),
+      isFree: true,
+      organizerName: "Nexora Labs",
+      location: "Koramangala, Bengaluru",
+    },
+  ];
 
   return {
     toolName: "searchEvents",

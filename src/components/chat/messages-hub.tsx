@@ -1,13 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { MessageSquare, Users, Sparkles, Plus, ArrowRight, ShieldCheck, Compass, Award } from "lucide-react";
+import { usePathname } from "next/navigation";
+import {
+  MessageSquare,
+  Users,
+  Sparkles,
+  Plus,
+  Search,
+  ShieldCheck,
+  Compass,
+  FileCheck2,
+  Lock,
+  ArrowRight,
+  FolderKanban,
+} from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
-import { formatRelativeDate } from "@/lib/utils";
-import { DotChatView } from "@/components/chat/dot-chat-view";
+import { formatRelativeDate, cn } from "@/lib/utils";
+import { getDotAvatar } from "@/lib/avatars";
 import { NewConversationDialog } from "@/components/chat/new-conversation-dialog";
-import { DOT_METADATA, DotId } from "@/lib/ai/dot-agent";
 
 interface ConversationItem {
   id: string;
@@ -35,241 +47,215 @@ export function MessagesHub({
   currentUserName,
   conversations,
 }: MessagesHubProps) {
-  const [activeTab, setActiveTab] = useState<"people" | "groups" | "dots">("dots");
-  const [selectedDotId, setSelectedDotId] = useState<DotId>("scout");
+  const [activeFilter, setActiveFilter] = useState<"all" | "dms" | "groups" | "dots">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const peopleConvs = conversations.filter((c) => !c.isGroup);
-  const groupConvs = conversations.filter((c) => c.isGroup);
+  const DOTS = [
+    {
+      id: "avis",
+      name: "AVIS",
+      role: "Trust & Verification Engine",
+      lastMsg: "Safe upload inspection and DNS TXT verification ready.",
+      icon: ShieldCheck,
+      color: "#0071E3",
+    },
+    {
+      id: "scout",
+      name: "SCOUT",
+      role: "5-Signal Matching",
+      lastMsg: "5 opportunity matches scored with >85% skill alignment.",
+      icon: Compass,
+      color: "#34C759",
+    },
+    {
+      id: "quill",
+      name: "QUILL",
+      role: "Skills & Evidence",
+      lastMsg: "Artifact assessment task review completed.",
+      icon: FileCheck2,
+      color: "#FF9500",
+    },
+    {
+      id: "relay",
+      name: "RELAY",
+      role: "Safe Communication Router",
+      lastMsg: "7-step message router active with quarantine safeguards.",
+      icon: MessageSquare,
+      color: "#5856D6",
+    },
+  ];
+
+  const filteredConversations = conversations.filter((c) => {
+    if (activeFilter === "dms" && c.isGroup) return false;
+    if (activeFilter === "groups" && !c.isGroup) return false;
+    if (activeFilter === "dots") return false;
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        c.displayName.toLowerCase().includes(q) ||
+        (c.lastMsg?.content && c.lastMsg.content.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Messages</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
-            Connect with team members, private groups, and the Four Coworker Dots.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <NewConversationDialog currentUserId={currentUserId} />
-        </div>
-      </div>
-
-      {/* Primary Category Navigation */}
-      <div className="flex border-b border-neutral-200 gap-6 text-sm font-semibold">
-        <button
-          onClick={() => setActiveTab("dots")}
-          className={`flex items-center gap-2 pb-3 relative transition-colors ${
-            activeTab === "dots"
-              ? "text-neutral-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-neutral-900"
-              : "text-neutral-500 hover:text-neutral-800"
-          }`}
-        >
-          <Sparkles className="h-4 w-4 text-amber-500" />
-          <span>Orbit Dots</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold">
-            4 Coworkers
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("people")}
-          className={`flex items-center gap-2 pb-3 relative transition-colors ${
-            activeTab === "people"
-              ? "text-neutral-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-neutral-900"
-              : "text-neutral-500 hover:text-neutral-800"
-          }`}
-        >
-          <MessageSquare className="h-4 w-4" />
-          <span>People</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-100 text-neutral-600">
-            {peopleConvs.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("groups")}
-          className={`flex items-center gap-2 pb-3 relative transition-colors ${
-            activeTab === "groups"
-              ? "text-neutral-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-neutral-900"
-              : "text-neutral-500 hover:text-neutral-800"
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          <span>Groups & Pods</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-100 text-neutral-600">
-            {groupConvs.length}
-          </span>
-        </button>
-      </div>
-
-      {/* Main Content Area */}
-      {activeTab === "dots" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Dot Selector Sidebar */}
-          <div className="lg:col-span-4 space-y-2.5">
-            <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider block px-1">
-              Select AI Coworker
-            </span>
-            {(["avis", "scout", "quill", "relay"] as DotId[]).map((dotId) => {
-              const d = DOT_METADATA[dotId];
-              const isSelected = selectedDotId === dotId;
-              return (
-                <button
-                  key={dotId}
-                  onClick={() => setSelectedDotId(dotId)}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-start gap-3 ${
-                    isSelected
-                      ? "border-neutral-900 bg-neutral-50 shadow-xs ring-1 ring-neutral-900"
-                      : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50/50"
-                  }`}
-                >
-                  <div
-                    className={`h-9 w-9 rounded-lg bg-gradient-to-tr ${d.avatarColor} flex items-center justify-center text-white flex-shrink-0 shadow-xs`}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-neutral-900">{d.name}</span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-700">
-                        DOT {d.dotNumber}
-                      </span>
-                    </div>
-                    <p className="text-xs font-medium text-neutral-600 mt-0.5 line-clamp-1">
-                      {d.title}
-                    </p>
-                    <p className="text-[11px] text-neutral-400 mt-1 line-clamp-1">{d.tagline}</p>
-                  </div>
-                </button>
-              );
-            })}
-
-            <div className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 mt-4">
-              <span className="text-xs font-semibold text-neutral-700 block mb-1">
-                Real Action Execution
-              </span>
-              <p className="text-[11px] text-neutral-500 leading-relaxed">
-                Dots do not merely chat. They search active Orbit opportunities, verify DNS domains, draft human-confirmed cold emails, and audit skills.
-              </p>
-            </div>
+    <div className="flex h-[calc(100vh-56px)] bg-white overflow-hidden">
+      {/* Column 2: Conversations List (approx 340-380px) */}
+      <div className="w-full sm:w-88 lg:w-96 border-r border-[#E5E5EA] flex flex-col bg-white flex-shrink-0">
+        {/* List Header */}
+        <div className="p-4 border-b border-[#F0F0F2] space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold tracking-tight text-[#1D1D1F]">
+              Messages
+            </h1>
+            <NewConversationDialog currentUserId={currentUserId} />
           </div>
 
-          {/* Chat Workspace */}
-          <div className="lg:col-span-8 h-[600px]">
-            <DotChatView
-              initialDotId={selectedDotId}
-              currentUserId={currentUserId}
-              currentUserName={currentUserName}
+          {/* Quick Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#86868B]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search conversations..."
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-[#E5E5EA] bg-[#F5F5F7] text-[13px] text-[#1D1D1F] placeholder-[#86868B] focus:border-[#0071E3] focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition-all outline-hidden"
             />
           </div>
-        </div>
-      ) : activeTab === "people" ? (
-        peopleConvs.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-12 text-center">
-            <MessageSquare className="h-8 w-8 text-neutral-400 mx-auto mb-3" />
-            <h2 className="text-sm font-bold text-neutral-900">No Direct Messages Yet</h2>
-            <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto">
-              Start a direct conversation with coworkers, founders, or applicants you are collaborating with.
-            </p>
-            <div className="mt-4">
-              <NewConversationDialog currentUserId={currentUserId} />
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-1 bg-white rounded-xl border border-neutral-200 divide-y divide-neutral-100 overflow-hidden">
-            {peopleConvs.map((conv) => (
-              <Link
-                key={conv.id}
-                href={`/messages/${conv.id}`}
-                className="flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-50 transition-colors"
+
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pt-1">
+            {[
+              { id: "all", label: "All" },
+              { id: "dms", label: "Direct" },
+              { id: "groups", label: "Groups" },
+              { id: "dots", label: "Dots" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveFilter(tab.id as any)}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap",
+                  activeFilter === tab.id
+                    ? "bg-[#1D1D1F] text-white"
+                    : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
+                )}
               >
-                <Avatar src={conv.displayImage} name={conv.displayName} size="md" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p
-                      className={`text-sm truncate ${
-                        conv.isUnread ? "font-semibold text-neutral-900" : "font-medium text-neutral-700"
-                      }`}
-                    >
-                      {conv.displayName}
-                    </p>
-                    {conv.lastMsg && (
-                      <p className="text-xs text-neutral-400 flex-shrink-0">
-                        {formatRelativeDate(conv.lastMsg.createdAt)}
-                      </p>
-                    )}
-                  </div>
-                  {conv.lastMsg && (
-                    <p
-                      className={`text-xs truncate ${
-                        conv.isUnread ? "text-neutral-800 font-medium" : "text-neutral-500"
-                      }`}
-                    >
-                      {conv.lastMsg.content || "Attachment"}
-                    </p>
-                  )}
-                </div>
-              </Link>
+                {tab.label}
+              </button>
             ))}
           </div>
-        )
-      ) : groupConvs.length === 0 ? (
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-12 text-center">
-          <Users className="h-8 w-8 text-neutral-400 mx-auto mb-3" />
-          <h2 className="text-sm font-bold text-neutral-900">No Team Pod Channels</h2>
-          <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto">
-            Group chats and private workspace channels are automatically initialized when team pods form.
-          </p>
-          <div className="mt-4">
-            <Link
-              href="/mod/scout/team-builder"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-900 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors"
-            >
-              <span>Build a Team Pod with Scout</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+        </div>
+
+        {/* Conversation Items List */}
+        <div className="flex-1 overflow-y-auto divide-y divide-[#F0F0F2]">
+          {/* Coworker Dots Section (if tab is all or dots) */}
+          {(activeFilter === "all" || activeFilter === "dots") && (
+            <div>
+              <p className="px-4 py-2 text-[10.5px] font-semibold tracking-wider uppercase text-[#86868B] bg-[#F5F5F7]/60">
+                Coworker Dots
+              </p>
+              {DOTS.map((dot) => {
+                const DIcon = dot.icon;
+                return (
+                  <Link
+                    key={dot.id}
+                    href={`/dots/${dot.id}`}
+                    className="flex items-center gap-3 p-3.5 hover:bg-[#F5F5F7] transition-colors group"
+                  >
+                    <div
+                      className="h-10 w-10 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0 border border-[#E5E5EA] shadow-2xs"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getDotAvatar(dot.id)}
+                        alt={dot.name}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[13.5px] font-semibold text-[#1D1D1F] group-hover:text-[#0071E3] transition-colors">
+                          {dot.name}
+                        </span>
+                        <span className="text-[10.5px] text-[#86868B]">Online</span>
+                      </div>
+                      <p className="text-[12px] text-[#6E6E73] truncate mt-0.5">
+                        {dot.lastMsg}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Direct & Group Conversations */}
+          {activeFilter !== "dots" && (
+            <div>
+              <p className="px-4 py-2 text-[10.5px] font-semibold tracking-wider uppercase text-[#86868B] bg-[#F5F5F7]/60">
+                Conversations
+              </p>
+              {filteredConversations.length > 0 ? (
+                filteredConversations.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/messages/${c.id}`}
+                    className="flex items-center gap-3 p-3.5 hover:bg-[#F5F5F7] transition-colors group"
+                  >
+                    <Avatar
+                      src={c.displayImage}
+                      name={c.displayName}
+                      size="md"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[13.5px] font-semibold text-[#1D1D1F] group-hover:text-[#0071E3] transition-colors truncate">
+                          {c.displayName}
+                        </span>
+                        {c.lastMsg?.createdAt && (
+                          <span className="text-[11px] text-[#86868B] flex-shrink-0">
+                            {formatRelativeDate(c.lastMsg.createdAt)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[12px] text-[#6E6E73] truncate mt-0.5">
+                        {c.lastMsg?.content || "No messages yet"}
+                      </p>
+                    </div>
+                    {c.isUnread && (
+                      <span className="h-2 w-2 rounded-full bg-[#0071E3] flex-shrink-0" />
+                    )}
+                  </Link>
+                ))
+              ) : (
+                <div className="p-8 text-center text-xs text-[#86868B]">
+                  No active conversations found.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Column 3: Active Conversation Canvas (Empty state on base /messages) */}
+      <div className="hidden sm:flex flex-1 flex-col items-center justify-center p-8 text-center bg-[#F5F5F7]">
+        <div className="max-w-md space-y-4">
+          <div className="h-14 w-14 rounded-2xl bg-white border border-[#E5E5EA] flex items-center justify-center mx-auto shadow-2xs text-[#0071E3]">
+            <MessageSquare className="h-7 w-7" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold text-[#1D1D1F] tracking-tight">
+              Select a conversation
+            </h2>
+            <p className="text-[13.5px] text-[#6E6E73] mt-1">
+              Choose a team member, private project channel, or launch one of your Four Coworker Dots to begin collaborating.
+            </p>
           </div>
         </div>
-      ) : (
-        <div className="space-y-1 bg-white rounded-xl border border-neutral-200 divide-y divide-neutral-100 overflow-hidden">
-          {groupConvs.map((conv) => (
-            <Link
-              key={conv.id}
-              href={`/messages/${conv.id}`}
-              className="flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-50 transition-colors"
-            >
-              <Avatar src={conv.displayImage} name={conv.displayName} size="md" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p
-                    className={`text-sm truncate ${
-                      conv.isUnread ? "font-semibold text-neutral-900" : "font-medium text-neutral-700"
-                    }`}
-                  >
-                    {conv.displayName}
-                  </p>
-                  {conv.lastMsg && (
-                    <p className="text-xs text-neutral-400 flex-shrink-0">
-                      {formatRelativeDate(conv.lastMsg.createdAt)}
-                    </p>
-                  )}
-                </div>
-                {conv.lastMsg && (
-                  <p
-                    className={`text-xs truncate ${
-                      conv.isUnread ? "text-neutral-800 font-medium" : "text-neutral-500"
-                    }`}
-                  >
-                    {conv.lastMsg.content || "Attachment"}
-                  </p>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

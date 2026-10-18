@@ -12,6 +12,7 @@ interface DialogProps {
   description?: string;
   children: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
+  className?: string;
 }
 
 export function Dialog({
@@ -21,6 +22,7 @@ export function Dialog({
   description,
   children,
   size = "md",
+  className,
 }: DialogProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -65,7 +67,8 @@ export function Dialog({
       <div
         className={cn(
           "relative w-full bg-white rounded-xl shadow-modal animate-slide-up",
-          sizes[size]
+          sizes[size],
+          className
         )}
       >
         <div className="flex items-start justify-between p-6 border-b border-neutral-100">

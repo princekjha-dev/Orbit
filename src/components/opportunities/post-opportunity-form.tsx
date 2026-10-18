@@ -72,7 +72,7 @@ export function PostOpportunityForm({ orgId, orgSlug }: PostOpportunityFormProps
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Location" placeholder="City, Country (or Remote)" {...register("location")} />
-            <Input label="Compensation" placeholder="e.g. Paid, market rate / $2000/mo" {...register("compensation")} />
+            <Input label="Compensation" placeholder="e.g. ₹6 LPA – ₹10 LPA / ₹25,000/mo" {...register("compensation")} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Duration" placeholder="e.g. 3 months / Full-time" {...register("duration")} />

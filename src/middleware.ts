@@ -23,21 +23,14 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Allow public routes and static assets
+  // Allow static assets, Next.js internals, and specific API endpoints
   if (
-    PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/")) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/onboarding") ||
     pathname.startsWith("/favicon") ||
     pathname.match(/\.(png|jpg|jpeg|svg|ico|webp|css|js)$/)
   ) {
-    // If authenticated user tries to visit login/signup/forgot-password, redirect to dashboard
-    if (AUTH_ROUTES.includes(pathname)) {
-      const nextAuthSession = await auth();
-      if (nextAuthSession?.user || supabaseUser) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      }
-    }
     return supabaseResponse;
   }
 
@@ -45,14 +38,63 @@ export async function middleware(request: NextRequest) {
   const nextAuthSession = await auth();
   const isAuthenticated = !!nextAuthSession?.user || !!supabaseUser;
 
-  // Redirect unauthenticated users to login
+  // Determine onboarding completion status
+  const userEmail = supabaseUser?.email || nextAuthSession?.user?.email;
+  const isDemo = !!userEmail && userEmail.toLowerCase().endsWith("@orbit.demo");
+  const isOnboardingComplete =
+    isDemo ||
+    supabaseUser?.user_metadata?.onboarding_completed === true ||
+    (nextAuthSession?.user as any)?.onboardingCompleted === true;
+
+  // 1. Auth routes (/login, /signup, /forgot-password)
+  if (AUTH_ROUTES.includes(pathname)) {
+    if (isAuthenticated) {
+      if (isOnboardingComplete) {
+        return NextResponse.redirect(new URL("/home", request.url));
+      } else {
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
+    }
+    return supabaseResponse;
+  }
+
+  // 2. Public informational routes (/, /privacy, /terms, /safety, /verify, /auth/callback)
+  if (PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))) {
+    return supabaseResponse;
+  }
+
+  // 3. Unauthenticated users trying to access protected routes
   if (!isAuthenticated) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized", code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Admin route protection
+  // 4. Onboarding route protection (/onboarding)
+  if (pathname === "/onboarding") {
+    // If authenticated user has ALREADY completed onboarding, redirect them to /home
+    if (isOnboardingComplete) {
+      return NextResponse.redirect(new URL("/home", request.url));
+    }
+    // Incomplete authenticated user is allowed to access /onboarding
+    return supabaseResponse;
+  }
+
+  // 5. Authenticated user with INCOMPLETE onboarding trying to access application routes
+  if (!isOnboardingComplete) {
+    if (pathname.startsWith("/api/")) {
+      return supabaseResponse;
+    }
+    return NextResponse.redirect(new URL("/onboarding", request.url));
+  }
+
+  // 6. Admin route protection
   const isAdmin =
     (nextAuthSession?.user as any)?.role === "ADMIN" ||
     supabaseUser?.user_metadata?.role === "ADMIN" ||

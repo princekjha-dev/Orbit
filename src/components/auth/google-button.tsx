@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { signIn } from "next-auth/react";
 
 interface GoogleButtonProps {
   mode?: "signin" | "signup";
@@ -11,35 +11,25 @@ interface GoogleButtonProps {
 
 export function GoogleButton({
   mode = "signin",
-  callbackUrl = "/dashboard",
+  callbackUrl,
   onError,
 }: GoogleButtonProps) {
   const [loading, setLoading] = useState(false);
 
+  const targetUrl = callbackUrl || (mode === "signup" ? "/onboarding" : "/home");
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const supabase = createClient();
-      const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-        callbackUrl
-      )}`;
+      const res = (await signIn("google", {
+        callbackUrl: targetUrl,
+        redirect: true,
+      })) as any;
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
-
-      if (error) {
+      if (res?.error) {
         setLoading(false);
-        onError?.(error.message || "Failed to initialize Google authentication.");
+        onError?.(res.error || "Failed to initialize Google authentication.");
       }
-      // If successful, Supabase automatically redirects the browser to Google
     } catch (err: any) {
       setLoading(false);
       onError?.(err?.message || "An unexpected error occurred with Google login.");

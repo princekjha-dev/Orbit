@@ -59,9 +59,11 @@ export async function MentorDashboard({ userId }: { userId: string }) {
       ),
     ]);
 
-    if (results && (results[0] || results[1].length > 0)) {
+    const isDemoAccount = userId.startsWith("demo-") || userId.includes("demo");
+
+    if (results) {
       [profile, sessions, requests, communities] = results;
-    } else {
+    } else if (isDemoAccount) {
       isDemoOffline = true;
       const mock = getMentorMockData();
       profile = mock.profile;
@@ -70,12 +72,15 @@ export async function MentorDashboard({ userId }: { userId: string }) {
       communities = mock.communities;
     }
   } catch {
-    isDemoOffline = true;
-    const mock = getMentorMockData();
-    profile = mock.profile;
-    sessions = mock.sessions;
-    requests = mock.requests;
-    communities = mock.communities;
+    const isDemoAccount = userId.startsWith("demo-") || userId.includes("demo");
+    if (isDemoAccount) {
+      isDemoOffline = true;
+      const mock = getMentorMockData();
+      profile = mock.profile;
+      sessions = mock.sessions;
+      requests = mock.requests;
+      communities = mock.communities;
+    }
   }
 
   const upcomingSessions = sessions.filter(

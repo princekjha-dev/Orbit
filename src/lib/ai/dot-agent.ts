@@ -24,7 +24,7 @@ import {
   ToolResult,
 } from "@/lib/ai/dot-tools";
 
-export type DotId = "avis" | "scout" | "quill" | "relay";
+export type DotId = "atlas" | "scout" | "forge" | "signal" | "avis" | "quill" | "relay";
 
 export interface DotMetadata extends DotDefinition {}
 
@@ -178,7 +178,32 @@ export async function processDotInteraction(
     lower.includes("cold email") ||
     lower.includes("draft email") ||
     lower.includes("outreach") ||
-    lower.includes("contact company");
+    lower.includes("contact company") ||
+    lower.includes("make it shorter") ||
+    lower.includes("make it more professional") ||
+    lower.includes("focus on ai research");
+
+  const isMentorSearch =
+    lower.includes("mentor") ||
+    lower.includes("advisory") ||
+    lower.includes("advisor") ||
+    lower.includes("guidance");
+
+  const isResumeReview =
+    lower.includes("resume") &&
+    (lower.includes("review") ||
+      lower.includes("feedback") ||
+      lower.includes("check") ||
+      lower.includes("evaluate") ||
+      lower.includes("score"));
+
+  const isCandidateSearch =
+    (lower.includes("candidate") ||
+      lower.includes("talent") ||
+      lower.includes("react developer") ||
+      lower.includes("frontend developer") ||
+      lower.includes("people looking")) &&
+    (dotId === "signal" || dotId === "scout" || dotId === "forge" || lower.includes("find"));
 
   const isEvents =
     lower.includes("hackathon") ||
@@ -197,20 +222,86 @@ export async function processDotInteraction(
     lower.includes("evidence") ||
     lower.includes("passport");
 
-  // A. Scout tool authorization
-  if (isJobSearch) {
+  // A. Scout / Quill / Dot tool authorizations
+  if (isResumeReview) {
+    const feedback =
+      `📄 **Resume Analysis for Aarav Sharma (Software Engineer / AI Developer)**\n\n` +
+      `**Target Role:** Frontend Engineer Intern @ Nexora Labs (Bengaluru / Hybrid)\n` +
+      `**Relevance Score:** 94% Match\n\n` +
+      `✅ **Strengths Identified:**\n` +
+      `• Strong alignment in React, Next.js 15, TypeScript, and modern Tailwind CSS.\n` +
+      `• High-signal open-source project: *AI Career Copilot* (vector similarity & FastAPI).\n` +
+      `• Verifiable proof of work recorded: *Built Scalable RPC Cache Engine* (Astra Digital Technologies).\n\n` +
+      `💡 **Actionable Recommendations:**\n` +
+      `1. Highlight the sub-5ms cosine retrieval benchmark in the project summary section.\n` +
+      `2. Emphasize your Bangalore Institute of Technology B.Tech coursework in distributed systems.\n` +
+      `3. Attach your verifiable Orbit credential link to the application header.`;
+
+    toolResult = {
+      toolName: "reviewResume",
+      success: true,
+      message: feedback,
+      actionLinks: [
+        { title: "Apply to Nexora Labs", href: "/opportunities/demo-opp-frontend-intern" },
+        { title: "View Profile & Evidence", href: "/profile" },
+      ],
+    };
+    groundedToolContext = feedback;
+  } else if (isMentorSearch) {
+    const msg =
+      `I found a top-tier mentor matching your criteria in India:\n\n` +
+      `**Dr. Ananya Iyer** (Chennai, Tamil Nadu)\n` +
+      `*AI Product & Startup Mentor | Distinguished Systems Advisor*\n` +
+      `• Expertise: Artificial Intelligence, Product Strategy, Startup Validation, Machine Learning\n` +
+      `• Rating: 4.98/5.0 (42 sessions completed)\n\n` +
+      `Would you like me to draft a personalized mentorship inquiry email and LinkedIn DM for you?`;
+
+    toolResult = {
+      toolName: "searchMentors",
+      success: true,
+      message: msg,
+      data: [{ name: "Dr. Ananya Iyer", location: "Chennai", role: "AI Mentor" }],
+      actionLinks: [
+        { title: "Message Dr. Ananya Iyer", href: "/messages/conv-aarav-ananya" },
+        { title: "View Mentor Profile", href: "/u/ananya_iyer" },
+      ],
+    };
+    groundedToolContext = msg;
+  } else if (isCandidateSearch) {
+    const msg =
+      `Found 1 high-signal verified candidate matching your requirements in Bengaluru:\n\n` +
+      `**Aarav Sharma** (Bengaluru, Karnataka, India)\n` +
+      `*Full-Stack Software Engineer & AI Systems Developer*\n` +
+      `• Skills: React, Next.js, TypeScript, Python, FastAPI, PostgreSQL\n` +
+      `• Verifiable Proof: Built Scalable RPC Cache Engine (Astra Digital) & AI Career Copilot\n` +
+      `• Status: Looking for software roles & internships (Remote / Hybrid)`;
+
+    toolResult = {
+      toolName: "searchCandidates",
+      success: true,
+      message: msg,
+      data: [{ name: "Aarav Sharma", location: "Bengaluru", role: "Software Engineer" }],
+      actionLinks: [
+        { title: "View Candidate Profile", href: "/profile" },
+        { title: "Open Conversation", href: "/messages/conv-aarav-riya" },
+      ],
+    };
+    groundedToolContext = msg;
+  } else if (isJobSearch) {
     if (dot.allowedTools.includes("searchOpportunities")) {
       const isRemote = lower.includes("remote");
       const query = lower.includes("frontend")
         ? "frontend"
+        : lower.includes("bengaluru")
+        ? "bengaluru"
         : lower.includes("internship")
         ? "internship"
         : undefined;
 
       toolResult = await toolSearchOpportunities(ctx, { query, remoteOnly: isRemote });
-      toolResult.message = `I searched Orbit's active listings and found ${
+      toolResult.message = `I searched Orbit's active listings in India and found ${
         toolResult.data?.length || 0
-      } matching opportunities. Here are the top recommendations with verified sponsors:`;
+      } matching opportunity/opportunities. Here are the top recommendations with verified sponsors:`;
       groundedToolContext = `Tool executed: searchOpportunities. Result: Found ${
         toolResult.data?.length || 0
       } opportunities. Listings: ${JSON.stringify(
@@ -218,6 +309,7 @@ export async function processDotInteraction(
           title: o.title,
           organization: o.organization?.name,
           location: o.location,
+          compensation: o.compensation,
           type: o.type,
         }))
       )}`;
@@ -243,14 +335,29 @@ export async function processDotInteraction(
     }
   } else if (isColdEmail) {
     if (dot.allowedTools.includes("draftColdEmail")) {
-      if (lower.includes("apex") || lower.includes("first company")) {
-        toolResult = await toolDraftColdEmail(ctx, {
-          companySlug: "apex-systems",
-          position: "Frontend / Systems Engineering",
-        });
-      } else {
-        toolResult = await toolSearchOrganizations(ctx, {});
+      let draftSlug = "nexora-labs";
+      let isShorter = lower.includes("shorter");
+      let isResearch = lower.includes("research");
+      let isProfessional = lower.includes("professional");
+
+      if (lower.includes("ananya") || lower.includes("mentor")) {
+        draftSlug = "ananya";
+      } else if (lower.includes("astra")) {
+        draftSlug = "astra";
       }
+
+      toolResult = await toolDraftColdEmail(ctx, {
+        companySlug: draftSlug,
+        position: isResearch ? "AI Systems & Research Fellow" : "Frontend Engineer Intern",
+        userPitch: isShorter
+          ? "I build fast React/Next.js systems and would love to contribute to your engineering milestones."
+          : isResearch
+          ? "My research focuses on low-latency vector retrieval and evaluating LLM tool-calling fidelity in production."
+          : isProfessional
+          ? "I am writing to inquire regarding engineering internship positions at your organization where my technical background in Next.js and distributed protocols may add immediate value."
+          : undefined,
+      });
+
       groundedToolContext = `Tool executed: ${toolResult.toolName}. Result: ${toolResult.message}`;
     } else {
       toolResult = {

@@ -21,25 +21,25 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const base =
-      "inline-flex items-center justify-center font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 select-none";
+      "inline-flex items-center justify-center font-medium transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] focus-visible:ring-offset-2 select-none active:scale-[0.98]";
 
     const variants = {
       primary:
-        "bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 border border-brand-600",
+        "bg-[#0071E3] text-white hover:bg-[#0077ED] active:bg-[#0066CC] shadow-2xs border border-transparent",
       secondary:
-        "bg-neutral-100 text-neutral-800 hover:bg-neutral-200 active:bg-neutral-200 border border-neutral-200",
+        "bg-[#F5F5F7] text-[#1D1D1F] hover:bg-[#EBEBED] active:bg-[#E0E0E3] border border-[#E5E5EA]",
       ghost:
-        "bg-transparent text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200",
+        "bg-transparent text-[#48484A] hover:text-[#1D1D1F] hover:bg-[#F5F5F7] active:bg-[#EBEBED]",
       danger:
-        "bg-danger-500 text-white hover:bg-danger-700 border border-danger-500",
+        "bg-[#FF3B30] text-white hover:bg-[#E0352B] active:bg-[#C92F26] border border-transparent",
       outline:
-        "bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 active:bg-neutral-100",
+        "bg-white text-[#1D1D1F] border border-[#E5E5EA] hover:border-[#D1D1D6] hover:bg-[#F5F5F7] active:bg-[#EBEBED] shadow-2xs",
     };
 
     const sizes = {
-      sm: "text-xs px-3 py-1.5 rounded-lg gap-1.5",
-      md: "text-sm px-4 py-2 rounded-lg gap-2",
-      lg: "text-base px-5 py-2.5 rounded-lg gap-2",
+      sm: "text-[12.5px] px-3 py-1.5 rounded-lg gap-1.5",
+      md: "text-[13.5px] px-4 py-2 rounded-xl gap-2",
+      lg: "text-[15px] px-5 py-2.5 rounded-xl gap-2",
     };
 
     return (
@@ -52,7 +52,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {loading && (
           <svg
-            className="animate-spin h-4 w-4"
+            className="animate-spin h-3.5 w-3.5"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

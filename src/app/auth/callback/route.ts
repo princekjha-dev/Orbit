@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, safeDbCall } from "@/lib/db";
 import { generateUsername } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
               ),
             ]);
 
+            let isOnboarded =
+              data.user.user_metadata?.onboarding_completed === true;
+
             if (!existing) {
               const name =
                 data.user.user_metadata?.full_name ||
@@ -69,7 +72,23 @@ export async function GET(request: NextRequest) {
                   setTimeout(() => reject(new Error("DB timeout")), 1500)
                 ),
               ]);
+              isOnboarded = false;
+            } else {
+              // Existing user: check if profile is populated
+              const profile = await safeDbCall(
+                () => prisma.profile.findUnique({ where: { userId: existing.id } }),
+                null
+              );
+              if (profile && (profile.headline || profile.about)) {
+                isOnboarded = true;
+              }
             }
+
+            const destination = isOnboarded
+              ? (next && next !== "/onboarding" ? next : "/home")
+              : "/onboarding";
+
+            return NextResponse.redirect(`${origin}${destination}`);
           }
         } catch (dbErr) {
           // If database is offline or timed out, user still has a valid Supabase session
@@ -79,7 +98,12 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        return NextResponse.redirect(`${origin}${next}`);
+        const isUserOnboarded = data.user.user_metadata?.onboarding_completed === true;
+        const fallbackTarget = isUserOnboarded
+          ? (next && next !== "/onboarding" ? next : "/home")
+          : "/onboarding";
+
+        return NextResponse.redirect(`${origin}${fallbackTarget}`);
       } else if (error) {
         return NextResponse.redirect(
           `${origin}/login?error=${encodeURIComponent(error.message)}`

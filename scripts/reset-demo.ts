@@ -98,17 +98,17 @@ async function resetDemoData() {
 
   // Delete demo organizations by slug
   await prisma.organization.deleteMany({
-    where: { slug: { in: ["apex-innovations", "aether-dynamics-org"] } },
+    where: { slug: { in: ["apex-innovations", "aether-dynamics-org", "astra-digital", "nexora-labs", "india-builders-network"] } },
   });
 
   // Delete demo startup by slug
   await prisma.startup.deleteMany({
-    where: { slug: "aether-dynamics" },
+    where: { slug: { in: ["aether-dynamics", "nexora-labs"] } },
   });
 
   // Delete demo community by slug
   await prisma.community.deleteMany({
-    where: { slug: "builders-hackers-guild" },
+    where: { slug: { in: ["builders-hackers-guild", "ai-builders-india"] } },
   });
 
   // Re-seed freshly

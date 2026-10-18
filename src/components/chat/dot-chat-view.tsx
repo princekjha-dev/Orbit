@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, Check, X, Mail, ExternalLink, ShieldCheck, Compass, Award, MessageSquare } from "lucide-react";
 import { DOT_METADATA, DotId } from "@/lib/ai/dot-agent";
+import { getDotAvatar } from "@/lib/avatars";
 import Link from "next/link";
 
 interface StoredMessage {
@@ -148,7 +149,7 @@ export function DotChatView({
     <div className="flex flex-col h-full bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-xs">
       {/* Dot Selector Tabs */}
       <div className="flex border-b border-neutral-200 bg-neutral-50/70 p-1.5 gap-1.5 overflow-x-auto">
-        {(["avis", "scout", "quill", "relay"] as DotId[]).map((id) => {
+        {(["atlas", "scout", "forge", "signal", "avis", "quill", "relay"] as DotId[]).map((id) => {
           const d = DOT_METADATA[id];
           const active = selectedDot === id;
           return (
@@ -164,8 +165,11 @@ export function DotChatView({
                   : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
               }`}
             >
-              <div
-                className={`h-2.5 w-2.5 rounded-full bg-gradient-to-tr ${d.avatarColor}`}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getDotAvatar(id)}
+                alt={d.name}
+                className="h-3.5 w-3.5 rounded-full object-cover"
               />
               <span>{d.name}</span>
               <span className="text-[10px] text-neutral-400 font-mono">
@@ -180,9 +184,14 @@ export function DotChatView({
       <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 bg-white">
         <div className="flex items-center gap-3">
           <div
-            className={`h-9 w-9 rounded-xl bg-gradient-to-tr ${dot.avatarColor} flex items-center justify-center text-white shadow-xs`}
+            className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center border border-neutral-200 shadow-xs flex-shrink-0"
           >
-            <Sparkles className="h-4 w-4" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getDotAvatar(selectedDot)}
+              alt={dot.name}
+              className="h-full w-full object-cover"
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -203,8 +212,21 @@ export function DotChatView({
           return (
             <div
               key={msg.id}
-              className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
+              className={`flex gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
             >
+              {!isUser && (
+                <div className="h-7 w-7 rounded-lg overflow-hidden border border-neutral-200 flex-shrink-0 mt-0.5 shadow-2xs">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={getDotAvatar(selectedDot)}
+                    alt={dot.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
+              <div
+                className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
+              >
               <div
                 className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                   isUser
@@ -241,6 +263,7 @@ export function DotChatView({
                   minute: "2-digit",
                 })}
               </span>
+              </div>
             </div>
           );
         })}

@@ -5,7 +5,7 @@ import { formatGroqApiError } from "@/lib/ai/groq/errors";
 import { inMemoryStore } from "@/lib/database/in-memory-store";
 import { z } from "zod";
 
-const VALID_DOTS: DotId[] = ["avis", "scout", "quill", "relay"];
+const VALID_DOTS: DotId[] = ["atlas", "scout", "forge", "signal", "avis", "quill", "relay"];
 
 const dotChatSchema = z.object({
   message: z.string().min(1, "Message cannot be empty").max(2000, "Message exceeds 2000 characters limit"),

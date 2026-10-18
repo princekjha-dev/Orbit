@@ -17,8 +17,8 @@ export default async function ConversationPage({ params }: PageProps) {
   const user = await getCurrentUser();
   if (!user) redirect(`/login?callbackUrl=/messages/${id}`);
 
-  // Check if this route is for one of the Four Coworker Dots
-  if (["avis", "scout", "quill", "relay"].includes(id)) {
+  // Check if this route is for one of the Coworker Dots
+  if (["atlas", "scout", "forge", "signal", "avis", "quill", "relay"].includes(id.toLowerCase())) {
     return (
       <div className="h-[calc(100vh-3.5rem)] lg:h-screen p-4 sm:p-6 max-w-5xl mx-auto flex flex-col">
         <DotChatView
@@ -60,8 +60,33 @@ export default async function ConversationPage({ params }: PageProps) {
     null
   );
 
-  if (!conversation && !membership) {
-    // If not found in DB, return 404
+  // Check synthetic Indian demo conversations if DB is offline or record is demo
+  let activeConv: any = conversation;
+  if (!activeConv) {
+    const { INITIAL_DEMO_CONVERSATIONS } = await import("@/lib/demo/demo-messages");
+    const foundDemo = INITIAL_DEMO_CONVERSATIONS.find((c) => c.id === id);
+    if (foundDemo) {
+      activeConv = {
+        id: foundDemo.id,
+        isGroup: foundDemo.isGroup,
+        name: foundDemo.title,
+        members: foundDemo.participants.map((p) => ({
+          userId: p.id,
+          user: { id: p.id, name: p.name, image: p.image || null, username: p.username },
+        })),
+        messages: foundDemo.messages.map((m) => ({
+          id: m.id,
+          content: m.content,
+          createdAt: new Date(m.createdAt),
+          senderId: m.senderId,
+          sender: { id: m.senderId, name: m.senderName, image: null },
+        })),
+      };
+    }
+  }
+
+  if (!activeConv) {
+    // If not found in DB or demo store, return 404
     notFound();
   }
 
@@ -75,12 +100,12 @@ export default async function ConversationPage({ params }: PageProps) {
     );
   }
 
-  const otherMembers = (conversation?.members || []).filter(
+  const otherMembers = (activeConv.members || []).filter(
     (m: any) => m.userId !== user.id
   );
-  const title = conversation?.isGroup
-    ? conversation.name || otherMembers.map((m: any) => m.user?.name).join(", ")
-    : otherMembers[0]?.user?.name || "Direct Message";
+  const title = activeConv.isGroup
+    ? activeConv.name || otherMembers.map((m: any) => m.user?.name).join(", ")
+    : otherMembers[0]?.user?.name || activeConv.name || "Direct Message";
 
   return (
     <div className="h-[calc(100vh-3.5rem)] lg:h-screen flex flex-col">
@@ -89,8 +114,8 @@ export default async function ConversationPage({ params }: PageProps) {
         currentUserId={user.id!}
         currentUserName={user.name!}
         title={title}
-        members={(conversation?.members as any) || []}
-        initialMessages={(conversation?.messages as any) || []}
+        members={(activeConv.members as any) || []}
+        initialMessages={(activeConv.messages as any) || []}
       />
     </div>
   );

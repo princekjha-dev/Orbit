@@ -47,15 +47,15 @@ export default async function StartupsPage({ searchParams }: PageProps) {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="blue" className="text-[11px] font-semibold bg-brand-50 text-brand-700 border-brand-200">
-              Venture Ecosystem
+              Startups and ideas
             </Badge>
             <span className="text-xs text-neutral-400">Founder Workspaces · Milestones · Hiring Needs</span>
           </div>
           <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">
-            Startup Workspaces & Ventures
+            Discover what's being built.
           </h1>
           <p className="text-sm text-neutral-500 mt-0.5">
-            Discover active builder ventures, review verifiable execution roadmaps, and join high-conviction founding teams.
+            Explore startups, ideas and teams turning problems into products.
           </p>
         </div>
 

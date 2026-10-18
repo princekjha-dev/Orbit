@@ -150,16 +150,17 @@ export async function listStartups(filters?: {
  * Checks if a user has sufficient membership privileges in a startup.
  */
 export function verifyStartupAccess(
-  startup: { creatorId: string; members: { userId: string }[] } | null,
+  startup: { creatorId: string; members?: { userId: string }[] } | null | any,
   userId: string | undefined,
   userRole?: string
 ): boolean {
   if (!startup || !userId) return false;
   if (userRole === "ADMIN" || userRole === "PLATFORM_ADMIN") return true;
 
+  const members = Array.isArray(startup.members) ? startup.members : [];
   return (
     startup.creatorId === userId ||
-    startup.members.some((m) => m.userId === userId)
+    members.some((m: any) => m.userId === userId)
   );
 }
 

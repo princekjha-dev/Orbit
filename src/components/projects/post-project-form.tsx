@@ -76,7 +76,7 @@ export function PostProjectForm({ orgId, orgSlug }: { orgId: string; orgSlug: st
             <Input label="Application deadline" type="date" {...register("deadline")} />
           </div>
           <Input label="Payment" required
-            placeholder="e.g. $500 fixed / $25/hr / Negotiable"
+            placeholder="e.g. ₹50,000 milestone / ₹25,000 fixed / Negotiable"
             hint="Orbit requires all projects to be paid."
             {...register("payment")} />
           <Textarea label="IP / ownership terms" rows={2}

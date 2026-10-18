@@ -1,7 +1,20 @@
-import { PrismaClient, UserRole, OpportunityType, WorkMode, ApplicationStatus, ProjectStatus, RecruiterStage, EvidenceType, SkillProofType, NotificationType, ReportStatus, DisputeStatus } from "@prisma/client";
+import {
+  PrismaClient,
+  UserRole,
+  OpportunityType,
+  WorkMode,
+  ApplicationStatus,
+  ProjectStatus,
+  RecruiterStage,
+  EvidenceType,
+  SkillProofType,
+  NotificationType,
+  ReportStatus,
+  DisputeStatus,
+} from "@prisma/client";
 import { hashSync } from "bcryptjs";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { DEMO_ACCOUNTS, DEMO_ROLE_LIST } from "../src/lib/auth/roles";
+import { DEMO_ACCOUNTS, DEMO_ROLE_LIST, DEMO_PASSWORD_DEFAULT } from "../src/lib/auth/roles";
 
 // Load environment variables if running outside Next.js
 if (typeof process.loadEnvFile === "function") {
@@ -14,10 +27,16 @@ if (typeof process.loadEnvFile === "function") {
 
 const prisma = new PrismaClient();
 
-const DEMO_PASSWORD = process.env.DEMO_ACCOUNT_PASSWORD || "OrbitDemo@2025!";
+const DEMO_PASSWORD = process.env.DEMO_ACCOUNT_PASSWORD || DEMO_PASSWORD_DEFAULT;
 const PASSWORD_HASH = hashSync(DEMO_PASSWORD, 12);
 
-async function syncSupabaseAuthUser(email: string, name: string, username: string, role: string, orbitRole: string) {
+async function syncSupabaseAuthUser(
+  email: string,
+  name: string,
+  username: string,
+  role: string,
+  orbitRole: string
+) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -75,7 +94,7 @@ async function syncSupabaseAuthUser(email: string, name: string, username: strin
 
 export async function seedDemoData() {
   console.log("--------------------------------------------------");
-  console.log("ORBIT: Seeding production-quality demo ecosystem");
+  console.log("ORBIT: Seeding synthetic Indian demo ecosystem");
   console.log("--------------------------------------------------");
 
   try {
@@ -85,12 +104,7 @@ export async function seedDemoData() {
     console.error("DATABASE CONNECTION ERROR");
     console.error("==================================================");
     console.error(`Prisma could not connect to PostgreSQL at: ${process.env.DATABASE_URL}`);
-    console.error("\nReason: The database server is not running or unreachable.");
-    console.error("\nHow to fix:");
-    console.error("  1. If using Supabase Cloud: Update .env with your project URL & database string:");
-    console.error("       NEXT_PUBLIC_SUPABASE_URL=https://<your-project-id>.supabase.co");
-    console.error("       DATABASE_URL=postgresql://postgres:<password>@aws-0-region.pooler.supabase.com:6543/postgres");
-    console.error("  2. If using local Supabase CLI / Docker: Start your local containers ('supabase start').");
+    console.error("\nNote: Demo accounts run seamlessly in Offline Demo Mode when DB is unreachable.");
     console.error("==================================================\n");
     throw dbErr;
   }
@@ -99,7 +113,8 @@ export async function seedDemoData() {
   const skillList = [
     "TypeScript", "React", "Next.js", "Node.js", "PostgreSQL",
     "Docker", "Kubernetes", "System Architecture", "Distributed Systems",
-    "UI/UX Design", "Figma", "Product Strategy", "GraphQL", "Python",
+    "UI/UX Design", "Figma", "Product Strategy", "FastAPI", "Python",
+    "AI/ML", "PyTorch", "Tailwind CSS",
   ];
 
   const skillsMap: Record<string, string> = {};
@@ -160,7 +175,7 @@ export async function seedDemoData() {
       update: {
         headline: account.headline,
         about: account.description,
-        location: "San Francisco, CA",
+        location: account.location,
         github: `https://github.com/${account.username}`,
         linkedin: `https://linkedin.com/in/${account.username}`,
       },
@@ -168,13 +183,13 @@ export async function seedDemoData() {
         userId: user.id,
         headline: account.headline,
         about: account.description,
-        location: "San Francisco, CA",
+        location: account.location,
         github: `https://github.com/${account.username}`,
         linkedin: `https://linkedin.com/in/${account.username}`,
       },
     });
 
-    console.log(`[Demo User] ${account.role.padEnd(20)} -> ${account.email}`);
+    console.log(`[Demo User] ${account.role.padEnd(20)} -> ${account.email} (${account.name})`);
   }
 
   const talentUser = users["TALENT"];
@@ -185,120 +200,150 @@ export async function seedDemoData() {
   const organizerUser = users["COMMUNITY_ORGANIZER"];
   const adminUser = users["PLATFORM_ADMIN"];
 
-  // Attach skills to Talent
-  for (const skillName of ["TypeScript", "React", "Next.js", "PostgreSQL", "Distributed Systems"]) {
+  // Attach skills to Talent (Aarav Sharma)
+  for (const skillName of ["TypeScript", "React", "Next.js", "Python", "FastAPI", "PostgreSQL", "AI/ML"]) {
     if (skillsMap[skillName]) {
-      await prisma.profileSkill.upsert({
-        where: {
-          profileId_skillId: {
-            profileId: (await prisma.profile.findUnique({ where: { userId: talentUser.id } }))!.id,
+      const talentProfile = await prisma.profile.findUnique({ where: { userId: talentUser.id } });
+      if (talentProfile) {
+        await prisma.profileSkill.upsert({
+          where: {
+            profileId_skillId: {
+              profileId: talentProfile.id,
+              skillId: skillsMap[skillName],
+            },
+          },
+          update: {},
+          create: {
+            profileId: talentProfile.id,
             skillId: skillsMap[skillName],
           },
-        },
-        update: {},
-        create: {
-          profileId: (await prisma.profile.findUnique({ where: { userId: talentUser.id } }))!.id,
-          skillId: skillsMap[skillName],
-        },
-      });
+        });
+      }
     }
   }
 
   // 3. ORGANIZATIONS
-  // A. Apex Innovations (Org Admin: David Sterling, Recruiter: Marcus Vance)
-  const apexOrg = await prisma.organization.upsert({
-    where: { slug: "apex-innovations" },
+  // A. Astra Digital Technologies (Org Admin: Vikram Malhotra, Recruiter: Karan Verma)
+  const astraOrg = await prisma.organization.upsert({
+    where: { slug: "astra-digital" },
     update: {
-      name: "Apex Innovations",
-      industry: "Enterprise Infrastructure & Distributed Systems",
-      description: "Apex Innovations builds fault-tolerant, high-throughput cloud infrastructure software.",
+      name: "Astra Digital Technologies",
+      industry: "Enterprise Software & Cloud Platforms",
+      description: "Next-generation distributed infrastructure, cloud migration accelerators, and enterprise design engineering.",
       verificationStatus: "VERIFIED",
     },
     create: {
-      name: "Apex Innovations",
-      slug: "apex-innovations",
-      industry: "Enterprise Infrastructure & Distributed Systems",
-      description: "Apex Innovations builds fault-tolerant, high-throughput cloud infrastructure software.",
-      website: "https://apex-innovations.demo",
-      email: "team@apex-innovations.demo",
-      location: "San Francisco, CA",
+      name: "Astra Digital Technologies",
+      slug: "astra-digital",
+      industry: "Enterprise Software & Cloud Platforms",
+      description: "Next-generation distributed infrastructure, cloud migration accelerators, and enterprise design engineering.",
+      website: "https://astradigital.in",
+      email: "contact@astradigital.in",
+      location: "Gurugram & Pune, India",
       verificationStatus: "VERIFIED",
     },
   });
 
   // Memberships
   await prisma.organizationMember.upsert({
-    where: { organizationId_userId: { organizationId: apexOrg.id, userId: orgAdminUser.id } },
+    where: { organizationId_userId: { organizationId: astraOrg.id, userId: orgAdminUser.id } },
     update: { role: "OWNER" },
-    create: { organizationId: apexOrg.id, userId: orgAdminUser.id, role: "OWNER" },
+    create: { organizationId: astraOrg.id, userId: orgAdminUser.id, role: "OWNER" },
   });
 
   await prisma.organizationMember.upsert({
-    where: { organizationId_userId: { organizationId: apexOrg.id, userId: recruiterUser.id } },
+    where: { organizationId_userId: { organizationId: astraOrg.id, userId: recruiterUser.id } },
     update: { role: "ADMIN" },
-    create: { organizationId: apexOrg.id, userId: recruiterUser.id, role: "ADMIN" },
+    create: { organizationId: astraOrg.id, userId: recruiterUser.id, role: "ADMIN" },
   });
 
   // Verification record
   await prisma.organizationVerification.upsert({
-    where: { organizationId: apexOrg.id },
-    update: { status: "VERIFIED", notes: "Enterprise verification approved" },
+    where: { organizationId: astraOrg.id },
+    update: { status: "VERIFIED", notes: "Enterprise verification approved via DNS TXT challenge" },
     create: {
-      organizationId: apexOrg.id,
+      organizationId: astraOrg.id,
       status: "VERIFIED",
-      notes: "Enterprise verification approved",
+      notes: "Enterprise verification approved via DNS TXT challenge",
       reviewedAt: new Date(),
       reviewedBy: adminUser.id,
     },
   });
 
-  // B. Aether Dynamics (Founder: Elena Rostova)
-  const aetherOrg = await prisma.organization.upsert({
-    where: { slug: "aether-dynamics-org" },
+  // B. Nexora Labs (Founder: Riya Mehta)
+  const nexoraOrg = await prisma.organization.upsert({
+    where: { slug: "nexora-labs" },
     update: {
-      name: "Aether Dynamics",
-      industry: "Developer Tools & AI Systems",
-      description: "Autonomous workflow orchestration systems for distributed engineering teams.",
-      verificationStatus: "PENDING",
+      name: "Nexora Labs",
+      industry: "AI / SaaS",
+      description: "Autonomous workflow orchestration and verifiable cloud pipelines for enterprise teams.",
+      verificationStatus: "VERIFIED",
     },
     create: {
-      name: "Aether Dynamics",
-      slug: "aether-dynamics-org",
-      industry: "Developer Tools & AI Systems",
-      description: "Autonomous workflow orchestration systems for distributed engineering teams.",
-      website: "https://aether-dynamics.demo",
-      email: "contact@aether-dynamics.demo",
-      location: "Austin, TX",
-      verificationStatus: "PENDING",
+      name: "Nexora Labs",
+      slug: "nexora-labs",
+      industry: "AI / SaaS",
+      description: "Autonomous workflow orchestration and verifiable cloud pipelines for enterprise teams.",
+      website: "https://nexoralabs.ai",
+      email: "riya@nexoralabs.ai",
+      location: "Mumbai & Bengaluru, India",
+      verificationStatus: "VERIFIED",
     },
   });
 
   await prisma.organizationMember.upsert({
-    where: { organizationId_userId: { organizationId: aetherOrg.id, userId: founderUser.id } },
+    where: { organizationId_userId: { organizationId: nexoraOrg.id, userId: founderUser.id } },
     update: { role: "OWNER" },
-    create: { organizationId: aetherOrg.id, userId: founderUser.id, role: "OWNER" },
+    create: { organizationId: nexoraOrg.id, userId: founderUser.id, role: "OWNER" },
+  });
+
+  // C. India Builders Network (Community Organizer: Neha Kapoor)
+  const ibnOrg = await prisma.organization.upsert({
+    where: { slug: "india-builders-network" },
+    update: {
+      name: "India Builders Network",
+      industry: "Developer Community & Hackathons",
+      description: "National builder ecosystem driving hackathons, open-source sprints, and student developer growth across India.",
+      verificationStatus: "VERIFIED",
+    },
+    create: {
+      name: "India Builders Network",
+      slug: "india-builders-network",
+      industry: "Developer Community & Hackathons",
+      description: "National builder ecosystem driving hackathons, open-source sprints, and student developer growth across India.",
+      website: "https://indiabuilders.network",
+      email: "community@indiabuilders.network",
+      location: "Noida, Uttar Pradesh, India",
+      verificationStatus: "VERIFIED",
+    },
+  });
+
+  await prisma.organizationMember.upsert({
+    where: { organizationId_userId: { organizationId: ibnOrg.id, userId: organizerUser.id } },
+    update: { role: "OWNER" },
+    create: { organizationId: ibnOrg.id, userId: organizerUser.id, role: "OWNER" },
   });
 
   // 4. FOUNDER STARTUP PROFILE
   const startup = await prisma.startup.upsert({
-    where: { slug: "aether-dynamics" },
+    where: { slug: "nexora-labs" },
     update: {
-      name: "Aether Dynamics",
-      stage: "SEED",
-      problem: "Engineering teams lose 30% of sprint capacity to manual cross-service coordination and synchronization.",
-      solution: "An autonomous workflow orchestrator providing deterministically synchronized distributed workflows.",
-      industry: "Developer Tools",
-      location: "Austin, TX / Remote",
+      name: "Nexora Labs",
+      stage: "MVP",
+      problem: "Product engineering teams waste hundreds of hours each sprint resolving fragmented LLM pipelines, prompt regressions, and manual role approvals.",
+      solution: "A cryptographic, verifiable agent engine with deterministic verification, multi-tenant state isolation, and unified AI coworker dots.",
+      industry: "AI / SaaS",
+      location: "Mumbai & Bengaluru, India",
     },
     create: {
-      name: "Aether Dynamics",
-      slug: "aether-dynamics",
-      stage: "SEED",
-      description: "Developing autonomous workflow orchestration systems for modern engineering organizations.",
-      problem: "Engineering teams lose 30% of sprint capacity to manual cross-service coordination and synchronization.",
-      solution: "An autonomous workflow orchestrator providing deterministically synchronized distributed workflows.",
-      industry: "Developer Tools",
-      location: "Austin, TX / Remote",
+      name: "Nexora Labs",
+      slug: "nexora-labs",
+      stage: "MVP",
+      description: "Autonomous workflow orchestration and verifiable cloud pipelines for enterprise teams.",
+      problem: "Product engineering teams waste hundreds of hours each sprint resolving fragmented LLM pipelines, prompt regressions, and manual role approvals.",
+      solution: "A cryptographic, verifiable agent engine with deterministic verification, multi-tenant state isolation, and unified AI coworker dots.",
+      industry: "AI / SaaS",
+      location: "Mumbai & Bengaluru, India",
       creatorId: founderUser.id,
     },
   });
@@ -310,431 +355,328 @@ export async function seedDemoData() {
       data: [
         {
           startupId: startup.id,
-          title: "Complete Core Protocol Engine v0.9",
-          description: "Ship deterministic event replay and state-machine verification.",
-          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+          title: "Complete v1.0 Pilot Architecture",
+          description: "Draft core state machine, verify deterministic cache, and publish SDK spec.",
+          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
           status: "IN_PROGRESS",
         },
         {
           startupId: startup.id,
-          title: "Hire Founding Full-Stack Engineer",
-          description: "Close first key hire to lead UI and SDK surface.",
-          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
-          status: "IN_PROGRESS",
+          title: "Deploy Security & RLS Enforcement Layer",
+          description: "Full Supabase and PostgreSQL RLS audit, RBAC integration, and token validation.",
+          dueDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+          status: "COMPLETED",
+        },
+        {
+          startupId: startup.id,
+          title: "Onboard First 5 Enterprise Design Partners in Bengaluru",
+          description: "Direct engineering pilot feedback loops and SLAs in Bengaluru.",
+          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 45),
+          status: "PLANNED",
         },
       ],
     });
   }
 
-  // 5. OPPORTUNITIES
-  // Opp 1: Elena Rostova's Founding Role
-  let oppFounder = await prisma.opportunity.findFirst({
-    where: { organizationId: aetherOrg.id, title: "Full-Stack Software Engineer (Founding Team)" },
+  // 5. OPPORTUNITIES (All INR compensation)
+  // Opp 1: Nexora Labs Frontend Engineer Intern
+  let oppFrontend = await prisma.opportunity.findFirst({
+    where: { organizationId: nexoraOrg.id, title: "Frontend Engineer Intern" },
   });
-  if (!oppFounder) {
-    oppFounder = await prisma.opportunity.create({
+  if (!oppFrontend) {
+    oppFrontend = await prisma.opportunity.create({
       data: {
-        organizationId: aetherOrg.id,
-        title: "Full-Stack Software Engineer (Founding Team)",
-        type: OpportunityType.STARTUP_ROLE,
-        workMode: WorkMode.REMOTE,
-        location: "Remote / US",
-        compensation: "$130k - $160k + 1.5% Equity",
-        description: "Join as our founding full-stack engineer. Build Orbit integrations and real-time dashboard SDKs.",
-        eligibility: "Experience with TypeScript, React, Node.js, and distributed systems.",
-        deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 45),
+        organizationId: nexoraOrg.id,
+        title: "Frontend Engineer Intern",
+        type: OpportunityType.INTERNSHIP,
+        workMode: WorkMode.HYBRID,
+        location: "Bengaluru, Karnataka (Hybrid)",
+        compensation: "₹4 LPA – ₹6 LPA",
+        description: "Join Nexora Labs to build intuitive, high-velocity web interfaces for our autonomous AI SaaS engine.",
+        eligibility: "Proficiency in React, Next.js, and TypeScript with open-source project evidence.",
+        deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25),
         isActive: true,
       },
     });
   }
 
-  // Opp 2: Apex Innovations Senior Backend Role
-  let oppApex = await prisma.opportunity.findFirst({
-    where: { organizationId: apexOrg.id, title: "Senior Backend Systems Engineer" },
+  // Opp 2: Nexora Labs AI Engineering Intern
+  let oppAi = await prisma.opportunity.findFirst({
+    where: { organizationId: nexoraOrg.id, title: "AI Engineering Intern" },
   });
-  if (!oppApex) {
-    oppApex = await prisma.opportunity.create({
+  if (!oppAi) {
+    oppAi = await prisma.opportunity.create({
       data: {
-        organizationId: apexOrg.id,
-        title: "Senior Backend Systems Engineer",
+        organizationId: nexoraOrg.id,
+        title: "AI Engineering Intern",
+        type: OpportunityType.INTERNSHIP,
+        workMode: WorkMode.REMOTE,
+        location: "Remote (India)",
+        compensation: "₹5 LPA – ₹8 LPA",
+        description: "Nexora Labs is seeking an AI Engineering Intern to develop and benchmark autonomous agent orchestration pipelines.",
+        eligibility: "Working knowledge of Python 3.11+, async FastAPI, and LLM APIs.",
+        deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 20),
+        isActive: true,
+      },
+    });
+  }
+
+  // Opp 3: Astra Digital Technologies Full Stack Developer
+  let oppFullStack = await prisma.opportunity.findFirst({
+    where: { organizationId: astraOrg.id, title: "Full Stack Developer" },
+  });
+  if (!oppFullStack) {
+    oppFullStack = await prisma.opportunity.create({
+      data: {
+        organizationId: astraOrg.id,
+        title: "Full Stack Developer",
+        type: OpportunityType.JOB,
+        workMode: WorkMode.REMOTE,
+        location: "Pune / Remote",
+        compensation: "₹10 LPA – ₹16 LPA",
+        description: "Architect and scale distributed enterprise microservices at Astra Digital Technologies.",
+        eligibility: "Strong background in TypeScript, React, Next.js, Node.js, and PostgreSQL.",
+        deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 35),
+        isActive: true,
+      },
+    });
+  }
+
+  // Opp 4: Astra Digital Product Designer
+  let oppDesigner = await prisma.opportunity.findFirst({
+    where: { organizationId: astraOrg.id, title: "Product Designer" },
+  });
+  if (!oppDesigner) {
+    oppDesigner = await prisma.opportunity.create({
+      data: {
+        organizationId: astraOrg.id,
+        title: "Product Designer",
         type: OpportunityType.JOB,
         workMode: WorkMode.HYBRID,
-        location: "San Francisco, CA",
-        compensation: "$165k - $190k + Competitive Equity",
-        description: "Architect high-throughput data pipelines and event streaming nodes for enterprise clients.",
-        eligibility: "Proven background in PostgreSQL, distributed systems, and telemetry.",
-        deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 60),
+        location: "Gurugram, Haryana (Hybrid)",
+        compensation: "₹8 LPA – ₹14 LPA",
+        description: "Craft elegant design systems, typography standards, and enterprise developer consoles.",
+        eligibility: "Mastery of Figma components, design tokens, and user research.",
+        deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
         isActive: true,
       },
     });
   }
 
-  // 6. TALENT APPLICATIONS (Interconnected Data)
+  // 6. TALENT APPLICATIONS (Aarav Sharma)
+  // Aarav -> Frontend Engineer Intern: SHORTLISTED
   await prisma.opportunityApplication.upsert({
-    where: { opportunityId_userId: { opportunityId: oppFounder.id, userId: talentUser.id } },
+    where: { opportunityId_userId: { opportunityId: oppFrontend.id, userId: talentUser.id } },
     update: { status: ApplicationStatus.SHORTLISTED },
     create: {
-      opportunityId: oppFounder.id,
+      opportunityId: oppFrontend.id,
       userId: talentUser.id,
       status: ApplicationStatus.SHORTLISTED,
-      notes: "Ecosystem talent applicant with verified proof of work in distributed systems.",
+      notes: "High-signal applicant with verifiable proof of work in Next.js and open source.",
     },
   });
 
+  // Aarav -> AI Engineering Intern: UNDER_REVIEW
   await prisma.opportunityApplication.upsert({
-    where: { opportunityId_userId: { opportunityId: oppApex.id, userId: talentUser.id } },
+    where: { opportunityId_userId: { opportunityId: oppAi.id, userId: talentUser.id } },
     update: { status: ApplicationStatus.UNDER_REVIEW },
     create: {
-      opportunityId: oppApex.id,
+      opportunityId: oppAi.id,
       userId: talentUser.id,
       status: ApplicationStatus.UNDER_REVIEW,
-      notes: "Applied with verified completion record from Apex Audit Pipeline project.",
+      notes: "Strong Python and FastAPI knowledge; AI Career Copilot evaluation matches well.",
     },
   });
 
   // Saved Opp
   await prisma.savedOpportunity.upsert({
-    where: { opportunityId_userId: { opportunityId: oppFounder.id, userId: talentUser.id } },
+    where: { opportunityId_userId: { opportunityId: oppFullStack.id, userId: talentUser.id } },
     update: {},
-    create: { userId: talentUser.id, opportunityId: oppFounder.id },
+    create: { userId: talentUser.id, opportunityId: oppFullStack.id },
   });
 
   // 7. PROJECTS & VERIFIED WORK (Proof of Work Loop)
-  let auditProject = await prisma.project.findFirst({
-    where: { organizationId: apexOrg.id, title: "Distributed Audit & Event Ingestion Pipeline" },
+  let copilotProject = await prisma.project.findFirst({
+    where: { title: "AI Career Copilot" },
   });
 
-  if (!auditProject) {
-    auditProject = await prisma.project.create({
+  if (!copilotProject) {
+    copilotProject = await prisma.project.create({
       data: {
-        organizationId: apexOrg.id,
-        title: "Distributed Audit & Event Ingestion Pipeline",
-        problem: "We require an idempotent ingestion service capable of ingesting 10,000 security audit events per second.",
-        scope: "Implement sharded queue ingestion, schema validation, and PostgreSQL storage adapter.",
-        deliverable: "TypeScript service repository with full integration test suite and benchmarks.",
-        acceptanceCriteria: "Zero data loss under simulated network partitions; test coverage > 90%.",
-        payment: "$1,800 milestone reward",
-        status: ProjectStatus.COMPLETED,
-        deadline: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
+        organizationId: astraOrg.id,
+        title: "AI Career Copilot",
+        problem: "Indian computer science graduates struggle to stand out through traditional keyword resumes.",
+        scope: "Build a verifiable portfolio analyzer that inspects commit history and PR complexity.",
+        deliverable: "TypeScript and Next.js service repository with full integration test suite.",
+        acceptanceCriteria: "Sub-5ms cosine retrieval benchmark; test coverage > 90%.",
+        payment: "₹50,000 milestone grant",
+        status: ProjectStatus.IN_PROGRESS,
+        deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 24),
       },
     });
   }
 
   // Project Application
   await prisma.projectApplication.upsert({
-    where: { projectId_userId: { projectId: auditProject.id, userId: talentUser.id } },
+    where: { projectId_userId: { projectId: copilotProject.id, userId: talentUser.id } },
     update: { status: "ACCEPTED" },
     create: {
-      projectId: auditProject.id,
+      projectId: copilotProject.id,
       userId: talentUser.id,
       status: "ACCEPTED",
-      proposal: "I will design an event stream pipeline with PostgreSQL partition tables and benchmark suite.",
+      proposal: "Designing low-latency vector retrieval pipelines with Next.js and FastAPI.",
     },
   });
 
-  // Verified Work Record
+  // Verified Work Record for Aarav Sharma
   const existingVwr = await prisma.verifiedWorkRecord.findFirst({
-    where: { projectId: auditProject.id, userId: talentUser.id },
+    where: { projectId: copilotProject.id, userId: talentUser.id },
   });
   if (!existingVwr) {
     await prisma.verifiedWorkRecord.create({
       data: {
-        projectId: auditProject.id,
+        projectId: copilotProject.id,
         userId: talentUser.id,
-        organizationId: apexOrg.id,
-        projectTitle: auditProject.title,
-        orgName: "Apex Innovations",
+        organizationId: astraOrg.id,
+        projectTitle: "Built Scalable RPC Cache Engine",
+        orgName: "Astra Digital Technologies",
         userRole: "Distributed Systems Contributor",
         scope: "Implemented sharded queue ingestion and PostgreSQL partition schema.",
-        deliverableUrl: "https://github.com/demo_talent/apex-audit-pipeline",
+        deliverableUrl: "https://github.com/demo_talent/orbit-engine",
         completionDate: new Date(),
-        reviewerName: "David Sterling",
-        reviewText: "Exceptional architecture and test discipline. Shipped ahead of deadline with zero bugs.",
+        evidenceUrl: "https://github.com/demo_talent/orbit-engine#0x8f2c31e9a4d7b290",
       },
     });
   }
 
-  // Skill Evidence
-  const existingEvidence = await prisma.skillEvidence.findFirst({
-    where: { userId: talentUser.id, title: "Distributed Audit Pipeline Implementation" },
-  });
-  if (!existingEvidence) {
-    await prisma.skillEvidence.create({
-      data: {
-        userId: talentUser.id,
-        skillName: "Distributed Systems",
-        evidenceType: EvidenceType.VERIFIED,
-        proofType: SkillProofType.VERIFIED_WORK,
-        title: "Distributed Audit Pipeline Implementation",
-        context: "Production-grade event pipeline handling 10k eps with idempotent guarantees.",
-        url: "https://github.com/demo_talent/apex-audit-pipeline",
-        isVerified: true,
-        verifiedAt: new Date(),
-        verifiedBy: orgAdminUser.id,
-      },
-    });
-  }
-
-  // 8. RECRUITER PIPELINE & TALENT POOLS
-  const talentPool = await prisma.talentPool.upsert({
-    where: { id: "pool-distributed-eng-apex" },
-    update: {},
-    create: {
-      id: "pool-distributed-eng-apex",
-      organizationId: apexOrg.id,
-      name: "Systems & Distributed Engineering (Q1)",
-      description: "Vetted candidates with verifiable track records in backend infrastructure.",
-      tags: "distributed-systems,postgresql,typescript",
-    },
-  });
-
-  await prisma.talentPoolCandidate.upsert({
-    where: { poolId_candidateId: { poolId: talentPool.id, candidateId: talentUser.id } },
-    update: { notes: "Verified top performer on Apex open pipeline." },
-    create: {
-      poolId: talentPool.id,
-      candidateId: talentUser.id,
-      notes: "Verified top performer on Apex open pipeline.",
-      tags: "vetted,high-priority",
-    },
-  });
-
-  const shortlist = await prisma.candidateShortlist.upsert({
-    where: { id: "shortlist-backend-apex" },
-    update: {},
-    create: {
-      id: "shortlist-backend-apex",
-      organizationId: apexOrg.id,
-      name: "Senior Backend Engineering Shortlist",
-      role: "Senior Backend Systems Engineer",
-      isPrivate: false,
-    },
-  });
-
-  let shortlistCandidate = await prisma.shortlistCandidate.findFirst({
-    where: { shortlistId: shortlist.id, candidateId: talentUser.id },
-  });
-  if (!shortlistCandidate) {
-    shortlistCandidate = await prisma.shortlistCandidate.create({
-      data: {
-        shortlistId: shortlist.id,
-        candidateId: talentUser.id,
-        stage: RecruiterStage.SCREENING,
-        matchReason: "Demonstrated production capability through verified Apex project completion.",
-        relevantSkills: "TypeScript, PostgreSQL, Distributed Systems",
-      },
-    });
-
-    await prisma.candidateNote.create({
-      data: {
-        shortlistCandidateId: shortlistCandidate.id,
-        authorId: recruiterUser.id,
-        note: "Alex completed our audit pipeline project with stellar code review. Fast-tracking to technical loop.",
-      },
-    });
-  }
-
-  // 9. MENTORSHIP ECOSYSTEM
-  await prisma.mentorProfile.upsert({
+  // 8. MENTORSHIP
+  const mentorProfile = await prisma.mentorProfile.upsert({
     where: { userId: mentorUser.id },
     update: {
-      expertise: "Distributed Systems, Architecture, Seed Scaling",
-      industries: "DevTools, Infrastructure, Enterprise SaaS",
-      availability: "2 sessions/week (Tuesdays & Thursdays)",
-      mentoringFormat: "1:1 Architecture Advisory",
       isVerified: true,
-      topics: "Systems design, high availability, early startup tech debt avoidance.",
+      expertise: "Artificial Intelligence, Product Strategy, Startup Validation, Distributed Systems",
+      industries: "AI / SaaS, Enterprise Platforms, Cloud Infrastructure",
+      experienceYears: 12,
+      topics: "System architecture, career transitions, scaling AI applications, deterministic verification",
+      availability: "4 hours/month, Thursday afternoons IST",
+      mentoringFormat: "1:1 Advisory & Architectural Review",
     },
     create: {
       userId: mentorUser.id,
-      expertise: "Distributed Systems, Architecture, Seed Scaling",
-      industries: "DevTools, Infrastructure, Enterprise SaaS",
-      experienceYears: 14,
-      availability: "2 sessions/week (Tuesdays & Thursdays)",
-      mentoringFormat: "1:1 Architecture Advisory",
       isVerified: true,
-      topics: "Systems design, high availability, early startup tech debt avoidance.",
+      expertise: "Artificial Intelligence, Product Strategy, Startup Validation, Distributed Systems",
+      industries: "AI / SaaS, Enterprise Platforms, Cloud Infrastructure",
+      experienceYears: 12,
+      topics: "System architecture, career transitions, scaling AI applications, deterministic verification",
+      availability: "4 hours/month, Thursday afternoons IST",
+      mentoringFormat: "1:1 Advisory & Architectural Review",
     },
   });
 
-  // Mentorship Request & Session with Alex Rivera
-  let reqTalent = await prisma.mentorshipRequest.findFirst({
-    where: { mentorId: mentorUser.id, menteeId: talentUser.id },
+  const tomorrow = new Date(Date.now() + 1000 * 60 * 60 * 24);
+  const mentorReq = await prisma.mentorshipRequest.create({
+    data: {
+      mentorId: mentorUser.id,
+      menteeId: talentUser.id,
+      topic: "Transitioning to Production AI Agent Pipelines & Proof of Work",
+      goals: "Review state synchronization architecture for high-concurrency event stream in AI Career Copilot.",
+      status: "ACCEPTED",
+    },
   });
-  if (!reqTalent) {
-    reqTalent = await prisma.mentorshipRequest.create({
-      data: {
-        mentorId: mentorUser.id,
-        menteeId: talentUser.id,
-        topic: "Transitioning from Senior Contributor to Distributed Systems Architect",
-        goals: "Hi Dr. Chen, I'd love your feedback on state synchronization patterns.",
-        status: "ACCEPTED",
-      },
-    });
 
-    await prisma.mentorshipSession.create({
-      data: {
-        requestId: reqTalent.id,
-        mentorId: mentorUser.id,
-        menteeId: talentUser.id,
-        scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 28),
-        durationMinutes: 45,
-        status: "SCHEDULED",
-        actionItems: "Prepare architecture diagram for event replay engine.",
-      },
-    });
-  }
-
-  // Mentorship Session with Elena Rostova
-  let reqFounder = await prisma.mentorshipRequest.findFirst({
-    where: { mentorId: mentorUser.id, menteeId: founderUser.id },
+  await prisma.mentorshipSession.create({
+    data: {
+      requestId: mentorReq.id,
+      mentorId: mentorUser.id,
+      menteeId: talentUser.id,
+      scheduledAt: tomorrow,
+      status: "SCHEDULED",
+    },
   });
-  if (!reqFounder) {
-    reqFounder = await prisma.mentorshipRequest.create({
-      data: {
-        mentorId: mentorUser.id,
-        menteeId: founderUser.id,
-        topic: "Venture Architecture & Technical Hiring Loop",
-        goals: "Reviewing our technical evaluation framework for the founding engineering role.",
-        status: "ACCEPTED",
-      },
-    });
 
-    await prisma.mentorshipSession.create({
-      data: {
-        requestId: reqFounder.id,
-        mentorId: mentorUser.id,
-        menteeId: founderUser.id,
-        scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 52),
-        durationMinutes: 45,
-        status: "SCHEDULED",
-        notes: "Focus on vetting full-stack candidates via evidence rather than whiteboard puzzles.",
-      },
-    });
-  }
+  // 9. EVENTS & HACKATHONS
+  const hackathonEvent = await prisma.event.create({
+    data: {
+      organizationId: ibnOrg.id,
+      organizerName: "India Builders Network",
+      title: "Orbit India Buildathon 2026",
+      description: "India's premier digital buildathon for next-generation AI agents and high-performance web systems.",
+      type: "HACKATHON",
+      format: "ONLINE",
+      startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
+      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 13),
+      isFree: true,
+    },
+  });
 
-  // 10. COMMUNITY & HACKATHON
-  const community = await prisma.community.upsert({
-    where: { slug: "builders-hackers-guild" },
+  await prisma.eventRegistration.create({
+    data: {
+      eventId: hackathonEvent.id,
+      userId: talentUser.id,
+    },
+  });
+
+  // 10. COMMUNITIES
+  const aiCommunity = await prisma.community.upsert({
+    where: { slug: "ai-builders-india" },
     update: {
-      name: "Builders & Hackers Guild",
-      description: "Global community of engineers, designers, and founders building verifiable prototypes.",
-      category: "Ecosystem Builders",
+      name: "AI Builders India",
+      description: "India's premier community of LLM engineers, researchers, and agentic systems developers.",
     },
     create: {
-      slug: "builders-hackers-guild",
-      name: "Builders & Hackers Guild",
-      description: "Global community of engineers, designers, and founders building verifiable prototypes.",
-      category: "Ecosystem Builders",
+      name: "AI Builders India",
+      slug: "ai-builders-india",
+      description: "India's premier community of LLM engineers, researchers, and agentic systems developers.",
+      category: "AI Builders",
       creatorId: organizerUser.id,
     },
   });
 
-  // Memberships
-  for (const u of [organizerUser, talentUser, mentorUser, founderUser]) {
-    const isOwner = u.id === organizerUser.id;
+  for (const u of [talentUser, founderUser, mentorUser, organizerUser]) {
     await prisma.communityMember.upsert({
-      where: { id: `cm-${community.id}-${u.id}` },
+      where: { id: `cm-${aiCommunity.id}-${u.id}` },
       update: {},
       create: {
-        id: `cm-${community.id}-${u.id}`,
-        communityId: community.id,
+        id: `cm-${aiCommunity.id}-${u.id}`,
+        communityId: aiCommunity.id,
         userId: u.id,
-        role: isOwner ? "ADMIN" : "MEMBER",
+        role: u.id === organizerUser.id ? "ADMIN" : "MEMBER",
       },
     });
   }
 
-  // Community Post
-  const existingPost = await prisma.communityPost.findFirst({
-    where: { communityId: community.id, authorId: organizerUser.id },
-  });
-  if (!existingPost) {
-    const post = await prisma.communityPost.create({
-      data: {
-        communityId: community.id,
-        authorId: organizerUser.id,
-        title: "Announcing Orbit Global Hackathon 2025: Build Proof-of-Work Solutions",
-        content: "Registration is open! Build verifiable projects across Web, AI, and Distributed Systems tracks.",
-        category: "ANNOUNCEMENT",
-      },
-    });
-
-    await prisma.communityComment.create({
-      data: {
-        postId: post.id,
-        authorId: talentUser.id,
-        content: "Looking forward to presenting our team's project at demo day!",
-      },
-    });
-  }
-
-  // Hackathon Event
-  let hackathon = await prisma.event.findFirst({
-    where: { title: "Orbit Global Hackathon 2025" },
-  });
-  if (!hackathon) {
-    hackathon = await prisma.event.create({
-      data: {
-        title: "Orbit Global Hackathon 2025",
-        organizerName: "Builders & Hackers Guild",
-        description: "48-hour global hackathon focused on evidence-backed open-source infrastructure.",
-        type: "HACKATHON",
-        format: "HYBRID",
-        city: "San Francisco & Global Online",
-        startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-        endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 9),
-      },
-    });
-
-    // Registration
-    await prisma.eventRegistration.create({
-      data: {
-        eventId: hackathon.id,
-        userId: talentUser.id,
-      },
-    });
-  }
-
-  // 11. MESSAGES & CONVERSATIONS
-  const convId = `conv-${recruiterUser.id}-${talentUser.id}`;
-  const conv = await prisma.conversation.upsert({
-    where: { id: convId },
-    update: {},
-    create: {
-      id: convId,
+  // 11. MESSAGES (Aarav Sharma ↔ Riya Mehta)
+  const conv = await prisma.conversation.create({
+    data: {
       isGroup: false,
+      members: {
+        create: [{ userId: founderUser.id }, { userId: talentUser.id }],
+      },
     },
   });
 
-  await prisma.conversationMember.upsert({
-    where: { conversationId_userId: { conversationId: conv.id, userId: recruiterUser.id } },
-    update: {},
-    create: { conversationId: conv.id, userId: recruiterUser.id },
-  });
-  await prisma.conversationMember.upsert({
-    where: { conversationId_userId: { conversationId: conv.id, userId: talentUser.id } },
-    update: {},
-    create: { conversationId: conv.id, userId: talentUser.id },
-  });
-
-  const existingMsg = await prisma.message.findFirst({ where: { conversationId: conv.id } });
-  if (!existingMsg) {
-    await prisma.message.create({
-      data: {
+  await prisma.message.createMany({
+    data: [
+      {
         conversationId: conv.id,
-        senderId: recruiterUser.id,
-        content: "Hi Alex, we reviewed your verified work record on the Apex audit pipeline. We'd love to discuss the Senior Backend role.",
+        senderId: founderUser.id,
+        content: "Hi Aarav! We reviewed your Orbit profile and GitHub repositories. Your Next.js and TypeScript projects look very clean. Would you be open to discussing our Frontend Engineer Intern role at Nexora Labs?",
+        createdAt: new Date(Date.now() - 3600000 * 24),
       },
-    });
-    await prisma.message.create({
-      data: {
+      {
         conversationId: conv.id,
         senderId: talentUser.id,
-        content: "Thank you Marcus! The project was an exciting challenge. I'd be glad to walk through the architecture.",
+        content: "Hello Riya, thank you for reaching out! I'm very interested in Nexora Labs' work on AI SaaS orchestration. I'd love to learn more about the team's roadmap and how I can contribute.",
+        createdAt: new Date(Date.now() - 3600000 * 20),
       },
-    });
-  }
+      {
+        conversationId: conv.id,
+        senderId: founderUser.id,
+        content: "Fantastic! Let's set up a quick 20-minute chat this Thursday at 3 PM IST to dive into the architecture.",
+        createdAt: new Date(Date.now() - 3600000 * 15),
+      },
+    ],
+  });
 
   // 12. NOTIFICATIONS
   await prisma.notification.createMany({
@@ -742,78 +684,40 @@ export async function seedDemoData() {
       {
         userId: talentUser.id,
         type: NotificationType.APPLICATION_STATUS,
-        title: "Application Shortlisted",
-        body: "Elena Rostova shortlisted your application for Full-Stack Software Engineer at Aether Dynamics.",
-        link: "/opportunities",
-      },
-      {
-        userId: talentUser.id,
-        type: NotificationType.VERIFICATION_UPDATE,
-        title: "Work Record Verified",
-        body: "David Sterling verified your work record for Distributed Audit & Event Ingestion Pipeline.",
-        link: "/verified-work",
+        title: "Application Shortlisted!",
+        body: "Your application for Frontend Engineer Intern at Nexora Labs was shortlisted by Riya Mehta.",
+        isRead: false,
+        link: "/dashboard",
       },
       {
         userId: founderUser.id,
-        type: NotificationType.APPLICATION_STATUS,
-        title: "New Qualified Candidate",
-        body: "Alex Rivera applied to Full-Stack Software Engineer (Founding Team).",
-        link: "/opportunities",
+        type: NotificationType.MESSAGE,
+        title: "Candidate Responded",
+        body: "Aarav Sharma responded to your message regarding the Frontend Engineer Intern position.",
+        isRead: false,
+        link: `/messages/${conv.id}`,
       },
       {
-        userId: mentorUser.id,
-        type: NotificationType.EVENT_REMINDER,
-        title: "Advisory Session Scheduled",
-        body: "Advisory session with Alex Rivera is scheduled for tomorrow.",
-        link: "/mentorship",
-      },
-    ],
-  });
-
-  // 13. ADMIN QUEUES & AUDIT LOGS
-  const existingReport = await prisma.report.findFirst({
-    where: { reportedById: organizerUser.id },
-  });
-  if (!existingReport) {
-    await prisma.report.create({
-      data: {
-        reportedById: organizerUser.id,
-        reason: "Suspected duplicate opportunity posting",
-        details: "Automated alert flagged an opportunity with matching description text.",
-        status: ReportStatus.OPEN,
-      },
-    });
-  }
-
-  await prisma.auditLog.createMany({
-    data: [
-      {
-        actorId: adminUser.id,
-        action: "ORGANIZATION_VERIFY",
-        entityType: "Organization",
-        entityId: apexOrg.id,
-        metadata: { orgName: "Apex Innovations", verifiedBy: adminUser.email },
-      },
-      {
-        actorId: orgAdminUser.id,
-        action: "VERIFIED_WORK_ISSUE",
-        entityType: "VerifiedWorkRecord",
-        entityId: auditProject.id,
-        metadata: { recipient: talentUser.email, projectTitle: auditProject.title },
+        userId: talentUser.id,
+        type: NotificationType.SYSTEM,
+        title: "Advisory Session Confirmed",
+        body: "Advisory session with Dr. Ananya Iyer is scheduled for tomorrow at 4 PM IST.",
+        isRead: true,
+        link: "/dashboard",
       },
     ],
   });
 
   console.log("--------------------------------------------------");
-  console.log("DEMO ECOSYSTEM SEEDING COMPLETED SUCCESSFULLY");
-  console.log("Password for all demo accounts: " + DEMO_PASSWORD);
+  console.log("ORBIT: Successfully seeded synthetic Indian demo ecosystem!");
+  console.log(`Demo Credentials: All 7 personas use password '${DEMO_PASSWORD}'`);
   console.log("--------------------------------------------------");
 }
 
 if (require.main === module) {
   seedDemoData()
     .catch((err) => {
-      console.error("Seeding error:", err);
+      console.error("Seed demo failed:", err);
       process.exit(1);
     })
     .finally(() => prisma.$disconnect());

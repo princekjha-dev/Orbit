@@ -4,6 +4,7 @@ import { getScoutOpportunitiesForCandidate, getScoutMetrics } from "@/lib/scout/
 import { MatchBreakdownCard } from "@/components/scout/match-breakdown-card";
 import { Compass, Users, Sparkles, Building2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DOT_AVATARS } from "@/lib/avatars";
 
 export const metadata = {
   title: "Scout - Discovery & Matching | OrbitMod V5",
@@ -21,15 +22,23 @@ export default async function ScoutDiscoveryPage() {
       <div className="rounded-2xl border border-neutral-200 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 p-8 text-white shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                DOT 2: SCOUT
-              </span>
-              <span className="text-xs text-neutral-400">Deterministic Match Engine</span>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl overflow-hidden border border-neutral-700 shadow-xs flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={DOT_AVATARS.Scout} alt="Scout" className="h-full w-full object-cover" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    DOT 2: SCOUT
+                  </span>
+                  <span className="text-xs text-neutral-400">Deterministic Match Engine</span>
+                </div>
+                <h1 className="text-3xl font-extrabold tracking-tight">
+                  Scout: Verified Discovery & Team Pods
+                </h1>
+              </div>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
-              Scout: Verified Discovery & Team Pods
-            </h1>
             <p className="text-sm text-neutral-300 max-w-2xl">
               Mathematically auditable 5-signal opportunity matching with transparent formula breakdowns.
               Every score is computed without black-box AI rankings.

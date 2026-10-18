@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/helpers";
 import { getAvisMetrics } from "@/lib/avis/avis-service";
 import { AvisTrustBadge } from "@/components/avis/trust-badge";
+import { DOT_AVATARS } from "@/lib/avatars";
 import {
   ShieldCheck,
   CheckCircle2,
@@ -28,8 +29,9 @@ export default async function AvisConsolePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-neutral-200">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
-              <ShieldCheck className="h-6 w-6" />
+            <div className="h-10 w-10 rounded-xl overflow-hidden border border-neutral-200 shadow-xs flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={DOT_AVATARS.Avis} alt="Avis" className="h-full w-full object-cover" />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-neutral-900 tracking-tight">
@@ -146,29 +148,29 @@ export default async function AvisConsolePage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link
-            href="/mod/avis/apex-innovations-demo"
+            href="/mod/avis/astra-digital"
             className="p-4 rounded-lg border border-neutral-200 hover:border-brand-300 hover:shadow-xs transition-all flex items-center justify-between"
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-xs text-neutral-900">Apex Innovations (DEMO)</span>
+                <span className="font-bold text-xs text-neutral-900">Astra Digital Technologies (DEMO)</span>
                 <AvisTrustBadge state="VERIFIED" />
               </div>
-              <p className="text-[11px] text-neutral-500 font-mono">domain: apexinnovations.org • DNS TXT confirmed</p>
+              <p className="text-[11px] text-neutral-500 font-mono">domain: astradigital.in • DNS TXT confirmed</p>
             </div>
             <ArrowRight className="h-4 w-4 text-neutral-400" />
           </Link>
 
           <Link
-            href="/mod/avis/hypergrowth-stealth-demo"
+            href="/mod/avis/nexora-labs"
             className="p-4 rounded-lg border border-neutral-200 hover:border-brand-300 hover:shadow-xs transition-all flex items-center justify-between"
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-xs text-neutral-900">HyperGrowth Labs (DEMO)</span>
-                <AvisTrustBadge state="NEEDS_REVIEW" />
+                <span className="font-bold text-xs text-neutral-900">Nexora Labs (DEMO)</span>
+                <AvisTrustBadge state="VERIFIED" />
               </div>
-              <p className="text-[11px] text-neutral-500 font-mono">domain: hypergrowth-labs-stealth.xyz • Pending review</p>
+              <p className="text-[11px] text-neutral-500 font-mono">domain: nexoralabs.ai • DNS TXT confirmed</p>
             </div>
             <ArrowRight className="h-4 w-4 text-neutral-400" />
           </Link>

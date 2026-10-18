@@ -358,7 +358,7 @@ export function StartupWorkspaceClient({ startup, currentUserId }: StartupWorksp
                 <div className="flex items-center justify-between">
                   <input
                     type="text"
-                    placeholder="Assignee (e.g. Sarah Chen)"
+                    placeholder="Assignee (e.g. Aarav Sharma)"
                     value={taskAssignee}
                     onChange={(e) => setTaskAssignee(e.target.value)}
                     className="px-2.5 py-1 text-xs bg-white border border-neutral-300 rounded-md text-neutral-700 w-48"

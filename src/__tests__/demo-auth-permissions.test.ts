@@ -57,7 +57,7 @@ describe("Demo Accounts & Role-Based Authorization System", () => {
     it("should retrieve demo account by email and role", () => {
       const talentAcc = getDemoAccountByEmail("demo.talent@orbit.demo");
       expect(talentAcc?.role).toBe("TALENT");
-      expect(talentAcc?.name).toBe("Alex Rivera");
+      expect(talentAcc?.name).toBe("Aarav Sharma");
 
       const adminAcc = getDemoAccountByRole("PLATFORM_ADMIN");
       expect(adminAcc.email).toBe("demo.admin@orbit.demo");

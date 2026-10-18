@@ -171,6 +171,24 @@ export async function GET(req: NextRequest) {
     events = [],
   ] = dbResults || [];
 
+  const { inMemoryStore } = await import("@/lib/database/in-memory-store");
+  if (inMemoryStore?.opportunities) {
+    const qLower = q.toLowerCase();
+    for (const opp of inMemoryStore.opportunities.values()) {
+      if (
+        opp.isActive &&
+        !opp.isDeleted &&
+        (opp.title?.toLowerCase().includes(qLower) ||
+          opp.description?.toLowerCase().includes(qLower) ||
+          opp.organization?.name?.toLowerCase().includes(qLower))
+      ) {
+        if (!opportunities.some((o: any) => o.id === opp.id)) {
+          opportunities.unshift(opp);
+        }
+      }
+    }
+  }
+
   const totalCount =
     people.length +
     opportunities.length +

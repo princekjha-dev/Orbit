@@ -5,7 +5,7 @@ import { formatGroqApiError } from "@/lib/ai/groq/errors";
 import { z } from "zod";
 
 const chatRequestSchema = z.object({
-  dotId: z.enum(["avis", "scout", "quill", "relay"]),
+  dotId: z.enum(["atlas", "scout", "forge", "signal", "avis", "quill", "relay"]),
   message: z.string().min(1, "Message cannot be empty").max(2000),
   confirmationAction: z
     .object({

@@ -65,7 +65,7 @@ export interface StoredHackathonTeam {
 export interface StoredDotConversation {
   id: string;
   userId: string;
-  dotId: "avis" | "scout" | "quill" | "relay";
+  dotId: "atlas" | "scout" | "forge" | "signal" | "avis" | "quill" | "relay" | string;
   title: string;
   createdAt: string;
   updatedAt: string;
@@ -74,7 +74,7 @@ export interface StoredDotConversation {
 export interface StoredDotMessage {
   id: string;
   conversationId?: string;
-  dotId: "avis" | "scout" | "quill" | "relay";
+  dotId: "atlas" | "scout" | "forge" | "signal" | "avis" | "quill" | "relay" | string;
   userId: string;
   sender: "user" | "dot";
   content: string;
@@ -160,39 +160,45 @@ const globalStore = globalThis as unknown as {
     dotMessages: Map<string, StoredDotMessage[]>; // userId:dotId or conversationId
     userProfiles: Map<string, any>;
     startups: Map<string, StoredStartup>; // id or slug -> StoredStartup
+    opportunities: Map<string, any>;
+    projects: Map<string, any>;
+    events: Map<string, any>;
+    communities: Map<string, any>;
+    users: Map<string, any>;
     emailOutbox: Array<{
       id: string;
       userId: string;
       recipient: string;
       subject: string;
       body: string;
-      sentAt: string;
-      status: "SENT" | "PENDING" | "FAILED";
+      sentAt?: string;
+      status: "SENT" | "PENDING" | "FAILED" | "APPROVED" | "SKIPPED";
+      providerMessageId?: string;
     }>;
   };
 };
 
 if (!globalStore.__ORBIT_STORE__) {
-  const aetherStartup: StoredStartup = {
-    id: "startup-aether-1",
-    slug: "aether-dynamics",
-    name: "Aether Dynamics",
+  const nexoraStartup: StoredStartup = {
+    id: "demo-startup-nexora",
+    slug: "nexora-labs",
+    name: "Nexora Labs",
     logo: null,
     description: "Autonomous workflow orchestration and verifiable cloud pipelines for enterprise teams.",
-    problem: "Enterprise development teams waste thousands of hours weekly triaging flaky pipelines, manual role approvals, and unverified work deliverables.",
-    solution: "A cryptographic verifiable workflow engine with zero-latency policy enforcement and unified AI mod agents.",
-    industry: "Developer Tools",
+    problem: "Product engineering teams waste hundreds of hours each sprint resolving fragmented LLM pipelines, prompt regressions, and manual role approvals.",
+    solution: "A cryptographic, verifiable agent engine with deterministic verification, multi-tenant state isolation, and unified AI coworker dots.",
+    industry: "AI / SaaS",
     stage: "MVP",
-    location: "San Francisco, CA (Hybrid)",
-    website: "https://aetherdynamics.io",
-    requiredSkills: "Next.js, TypeScript, Distributed Systems, Rust, PostgreSQL",
+    location: "Mumbai & Bengaluru, India (Hybrid)",
+    website: "https://nexoralabs.ai",
+    requiredSkills: "Next.js, TypeScript, Python, FastAPI, PostgreSQL, PyTorch",
     creatorId: "demo-founder",
     createdAt: new Date(Date.now() - 3600000 * 24 * 30).toISOString(),
     updatedAt: new Date().toISOString(),
     milestones: [
       {
         id: "m-1",
-        startupId: "startup-aether-1",
+        startupId: "demo-startup-nexora",
         title: "Complete v1.0 Pilot Architecture",
         description: "Draft core state machine, verify deterministic cache, and publish SDK spec.",
         dueDate: new Date(Date.now() + 3600000 * 24 * 14).toISOString(),
@@ -201,7 +207,7 @@ if (!globalStore.__ORBIT_STORE__) {
       },
       {
         id: "m-2",
-        startupId: "startup-aether-1",
+        startupId: "demo-startup-nexora",
         title: "Deploy Security & RLS Enforcement Layer",
         description: "Full Supabase and PostgreSQL RLS audit, RBAC integration, and token validation.",
         dueDate: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
@@ -210,9 +216,9 @@ if (!globalStore.__ORBIT_STORE__) {
       },
       {
         id: "m-3",
-        startupId: "startup-aether-1",
+        startupId: "demo-startup-nexora",
         title: "Onboard First 5 Enterprise Design Partners",
-        description: "Direct engineering pilot feedback loops and SLAs.",
+        description: "Direct engineering pilot feedback loops and SLAs in Bengaluru.",
         dueDate: new Date(Date.now() + 3600000 * 24 * 45).toISOString(),
         status: "PLANNED",
         createdAt: new Date().toISOString(),
@@ -221,23 +227,23 @@ if (!globalStore.__ORBIT_STORE__) {
     tasks: [
       {
         id: "t-1",
-        startupId: "startup-aether-1",
+        startupId: "demo-startup-nexora",
         title: "Build client SDK token refresher",
         status: "DONE",
-        assignedTo: "Sarah Chen",
+        assignedTo: "Aarav Sharma",
         createdAt: new Date().toISOString(),
       },
       {
         id: "t-2",
-        startupId: "startup-aether-1",
+        startupId: "demo-startup-nexora",
         title: "Implement Groq LLM streaming adapter",
         status: "IN_PROGRESS",
-        assignedTo: "Alex Rivera",
+        assignedTo: "Aarav Sharma",
         createdAt: new Date().toISOString(),
       },
       {
         id: "t-3",
-        startupId: "startup-aether-1",
+        startupId: "demo-startup-nexora",
         title: "Design candidate technical rubric",
         status: "TODO",
         createdAt: new Date().toISOString(),
@@ -246,46 +252,46 @@ if (!globalStore.__ORBIT_STORE__) {
     hiringNeeds: [
       {
         id: "h-1",
-        startupId: "startup-aether-1",
-        title: "Founding Full-Stack Systems Engineer",
-        roleType: "FULL_TIME",
+        startupId: "demo-startup-nexora",
+        title: "Frontend Engineer Intern",
+        roleType: "INTERNSHIP",
         count: 1,
-        skills: ["Next.js", "TypeScript", "PostgreSQL"],
+        skills: ["Next.js", "TypeScript", "React", "Tailwind CSS"],
         createdAt: new Date().toISOString(),
       },
       {
         id: "h-2",
-        startupId: "startup-aether-1",
-        title: "Senior Cloud Infrastructure Engineer",
-        roleType: "CONTRACT",
+        startupId: "demo-startup-nexora",
+        title: "AI Engineering Intern",
+        roleType: "INTERNSHIP",
         count: 1,
-        skills: ["Docker", "Kubernetes", "Rust"],
+        skills: ["Python", "FastAPI", "AI/ML", "PyTorch"],
         createdAt: new Date().toISOString(),
       },
     ],
     members: [
       {
         id: "sm-1",
-        startupId: "startup-aether-1",
+        startupId: "demo-startup-nexora",
         userId: "demo-founder",
         role: "FOUNDER",
-        name: "Sarah Chen",
+        name: "Riya Mehta",
         joinedAt: new Date(Date.now() - 3600000 * 24 * 30).toISOString(),
       },
       {
         id: "sm-2",
-        startupId: "startup-aether-1",
-        userId: "demo-student",
-        role: "CO_FOUNDER",
-        name: "Alex Rivera",
-        joinedAt: new Date(Date.now() - 3600000 * 24 * 20).toISOString(),
+        startupId: "demo-startup-nexora",
+        userId: "demo-talent",
+        role: "CONTRIBUTOR",
+        name: "Aarav Sharma",
+        joinedAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
       },
     ],
   };
 
   const startupsMap = new Map<string, StoredStartup>();
-  startupsMap.set(aetherStartup.id, aetherStartup);
-  startupsMap.set(aetherStartup.slug, aetherStartup);
+  startupsMap.set(nexoraStartup.id, nexoraStartup);
+  startupsMap.set(nexoraStartup.slug, nexoraStartup);
 
   globalStore.__ORBIT_STORE__ = {
     applications: new Map(),
@@ -293,23 +299,23 @@ if (!globalStore.__ORBIT_STORE__) {
     posts: [
       {
         id: "post-demo-1",
-        communitySlug: "systems-engineering",
+        communitySlug: "ai-builders-india",
         authorId: "demo-founder",
-        authorName: "Sarah Chen",
+        authorName: "Riya Mehta",
         authorImage: null,
         content:
-          "Welcome to the Systems Engineering community! Share your projects, ask questions about distributed protocols, and collaborate on open opportunities.",
-        tags: ["welcome", "distributed-systems", "engineering"],
-        likesCount: 14,
+          "Welcome to the AI Builders India community! Share your projects, discuss autonomous agent protocols, and collaborate on open opportunities.",
+        tags: ["welcome", "ai-agents", "engineering", "bengaluru"],
+        likesCount: 28,
         commentsCount: 2,
         createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
         comments: [
           {
             id: "comment-demo-1",
             postId: "post-demo-1",
-            authorId: "demo-student",
-            authorName: "Alex Rivera",
-            content: "Excited to collaborate on the consensus engine projects here!",
+            authorId: "demo-talent",
+            authorName: "Aarav Sharma",
+            content: "Excited to collaborate on the AI Career Copilot and agent evaluation projects here!",
             createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
           },
         ],
@@ -321,6 +327,11 @@ if (!globalStore.__ORBIT_STORE__) {
     dotMessages: new Map(),
     userProfiles: new Map(),
     startups: startupsMap,
+    opportunities: new Map(),
+    projects: new Map(),
+    events: new Map(),
+    communities: new Map(),
+    users: new Map(),
     emailOutbox: [],
   };
 }

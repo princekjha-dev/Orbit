@@ -30,14 +30,21 @@ describe("Orbit Dots — Independent Groq API Integration Test Suite", () => {
   });
 
   describe("2. Dot Architecture & Strict Prompt Isolation (No Cross-Contamination)", () => {
-    it("should define all four Dots with distinct identities, numbers, and avatars", () => {
-      const dotIds: DotId[] = ["avis", "scout", "quill", "relay"];
-      expect(Object.keys(DOT_CONFIGS)).toEqual(dotIds);
+    it("should define core Dots with distinct identities, numbers, and avatars", () => {
+      const coreDotIds: DotId[] = ["avis", "scout", "quill", "relay"];
+      for (const id of coreDotIds) {
+        expect(DOT_CONFIGS[id]).toBeDefined();
+      }
 
       expect(DOT_CONFIGS.avis.dotNumber).toBe(1);
       expect(DOT_CONFIGS.scout.dotNumber).toBe(2);
       expect(DOT_CONFIGS.quill.dotNumber).toBe(3);
       expect(DOT_CONFIGS.relay.dotNumber).toBe(4);
+
+      expect(DOT_CONFIGS.avis.avatarUrl).toBe("/dots/blue.png");
+      expect(DOT_CONFIGS.scout.avatarUrl).toBe("/dots/purple.png");
+      expect(DOT_CONFIGS.quill.avatarUrl).toBe("/dots/mint.png");
+      expect(DOT_CONFIGS.relay.avatarUrl).toBe("/dots/orange.png");
     });
 
     it("should ensure Avis has strict Trust & Verification instructions and DNS tools", () => {

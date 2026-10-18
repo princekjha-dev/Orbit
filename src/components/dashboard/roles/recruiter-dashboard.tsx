@@ -57,6 +57,8 @@ export async function RecruiterDashboard({ userId }: { userId: string }) {
       ),
     ]);
 
+    const isDemoAccount = userId.startsWith("demo-") || userId.includes("demo");
+
     if (results && results.length > 0) {
       orgMemberships = results;
       const org = orgMemberships[0]?.organization;
@@ -94,7 +96,7 @@ export async function RecruiterDashboard({ userId }: { userId: string }) {
         applications = apps;
         verifiedProofs = proofs;
       }
-    } else {
+    } else if (isDemoAccount) {
       isDemoOffline = true;
       const mock = getRecruiterMockData();
       orgMemberships = mock.orgMemberships;
@@ -102,11 +104,14 @@ export async function RecruiterDashboard({ userId }: { userId: string }) {
       verifiedProofs = mock.verifiedProofs;
     }
   } catch {
-    isDemoOffline = true;
-    const mock = getRecruiterMockData();
-    orgMemberships = mock.orgMemberships;
-    applications = mock.applications;
-    verifiedProofs = mock.verifiedProofs;
+    const isDemoAccount = userId.startsWith("demo-") || userId.includes("demo");
+    if (isDemoAccount) {
+      isDemoOffline = true;
+      const mock = getRecruiterMockData();
+      orgMemberships = mock.orgMemberships;
+      applications = mock.applications;
+      verifiedProofs = mock.verifiedProofs;
+    }
   }
 
   const org = orgMemberships[0]?.organization || null;

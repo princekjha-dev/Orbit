@@ -4,6 +4,7 @@ import { getCommunityNotes, getRelayMetrics } from "@/lib/relay/relay-service";
 import { CommunityNoteCard } from "@/components/relay/community-note-card";
 import { MessageSquare, Shield, AlertTriangle, Users, Plus, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DOT_AVATARS } from "@/lib/avatars";
 
 export const metadata = {
   title: "Relay - Safe Messaging & Community Notes | OrbitMod V5",
@@ -20,15 +21,23 @@ export default async function RelayHubPage() {
       <div className="rounded-2xl border border-neutral-200 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 p-8 text-white shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                DOT 4: RELAY
-              </span>
-              <span className="text-xs text-neutral-400">Community Context & Safe Messaging</span>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl overflow-hidden border border-neutral-700 shadow-xs flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={DOT_AVATARS.Relay} alt="Relay" className="h-full w-full object-cover" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    DOT 4: RELAY
+                  </span>
+                  <span className="text-xs text-neutral-400">Community Context & Safe Messaging</span>
+                </div>
+                <h1 className="text-3xl font-extrabold tracking-tight">
+                  Relay: Community Notes & Platform Safety
+                </h1>
+              </div>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
-              Relay: Community Notes & Platform Safety
-            </h1>
             <p className="text-sm text-neutral-300 max-w-2xl">
               Decentralized consensus notes with strictly neutral copy, safe team pod messaging with off-platform contact detection, and transparent report triaging.
             </p>

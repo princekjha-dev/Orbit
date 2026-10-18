@@ -39,6 +39,22 @@ export async function POST(
     { id: `msg-fallback-${Date.now()}` } as any
   );
 
+  // Also persist in demo conversation store for instant live preview and persistence
+  const { INITIAL_DEMO_CONVERSATIONS } = await import("@/lib/demo/demo-messages");
+  const demoConv = INITIAL_DEMO_CONVERSATIONS.find((c) => c.id === id);
+  if (demoConv) {
+    demoConv.messages.push({
+      id: message?.id || `msg-${Date.now()}`,
+      conversationId: id,
+      senderId: user.id!,
+      senderName: user.name || "Member",
+      senderUsername: (user as any).username || "member",
+      content: content.trim(),
+      createdAt: new Date().toISOString(),
+    });
+    demoConv.updatedAt = new Date().toISOString();
+  }
+
   safeDbCall(() =>
     prisma.conversation.update({
       where: { id },
@@ -64,7 +80,7 @@ export async function GET(
   }
 
   const after = req.nextUrl.searchParams.get("after");
-  const messages = await safeDbCall(
+  const dbMessages = await safeDbCall(
     () =>
       prisma.message.findMany({
         where: {
@@ -79,5 +95,22 @@ export async function GET(
     []
   );
 
-  return NextResponse.json({ success: true, messages: messages || [] });
+  if (dbMessages && dbMessages.length > 0) {
+    return NextResponse.json({ success: true, messages: dbMessages });
+  }
+
+  // Fallback to demo conversation messages
+  const { INITIAL_DEMO_CONVERSATIONS } = await import("@/lib/demo/demo-messages");
+  const demoConv = INITIAL_DEMO_CONVERSATIONS.find((c) => c.id === id);
+  const demoMsgs = (demoConv?.messages || [])
+    .filter((m) => !after || new Date(m.createdAt) > new Date(after))
+    .map((m) => ({
+      id: m.id,
+      content: m.content,
+      createdAt: m.createdAt,
+      senderId: m.senderId,
+      sender: { id: m.senderId, name: m.senderName, image: null },
+    }));
+
+  return NextResponse.json({ success: true, messages: demoMsgs });
 }

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { UserRole } from "@prisma/client";
 import { resolveOrbitRole, can, Capability } from "@/lib/auth/permissions";
-import { OrbitRole } from "@/lib/auth/roles";
+import { isDemoEmail } from "@/lib/auth/roles";
 
 export async function getCurrentUser() {
   // 1. Check active NextAuth session
@@ -12,6 +12,11 @@ export async function getCurrentUser() {
   if (session?.user) {
     const user = session.user as any;
     user.orbitRole = resolveOrbitRole(user);
+    const isDemo = isDemoEmail(user.email);
+    user.onboardingCompleted =
+      isDemo ||
+      user.onboardingCompleted === true ||
+      user.user_metadata?.onboarding_completed === true;
     return user;
   }
 
@@ -38,6 +43,18 @@ export async function getCurrentUser() {
               role: true,
               image: true,
               isSuspended: true,
+              profile: {
+                select: {
+                  id: true,
+                  headline: true,
+                  about: true,
+                  location: true,
+                  website: true,
+                  github: true,
+                  linkedin: true,
+                  portfolio: true,
+                },
+              },
               organizations: {
                 select: { role: true },
               },
@@ -54,6 +71,11 @@ export async function getCurrentUser() {
         // DB unreachable
       }
 
+      const isDemo = isDemoEmail(user.email);
+      const isMetadataOnboarded = user.user_metadata?.onboarding_completed === true;
+      const isProfilePopulated = !!(dbUser?.profile && (dbUser.profile.headline || dbUser.profile.about));
+      const onboardingCompleted = isDemo || isMetadataOnboarded || isProfilePopulated;
+
       if (dbUser && !dbUser.isSuspended) {
         const orbitRole = resolveOrbitRole({
           ...dbUser,
@@ -62,6 +84,8 @@ export async function getCurrentUser() {
         return {
           ...dbUser,
           orbitRole,
+          onboardingCompleted,
+          user_metadata: user.user_metadata,
         };
       }
 
@@ -74,6 +98,8 @@ export async function getCurrentUser() {
         username: user.user_metadata?.username || user.email.split("@")[0],
         role: user.user_metadata?.role || "STUDENT",
         orbitRole,
+        onboardingCompleted,
+        user_metadata: user.user_metadata,
       };
     }
   } catch {
@@ -83,9 +109,23 @@ export async function getCurrentUser() {
   return null;
 }
 
-export async function requireAuth() {
+export async function requireAuth({
+  allowIncomplete = false,
+}: { allowIncomplete?: boolean } = {}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!allowIncomplete && !user.onboardingCompleted) {
+    redirect("/onboarding");
+  }
+  return user;
+}
+
+export async function requireOnboardingIncomplete() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (user.onboardingCompleted) {
+    redirect("/home");
+  }
   return user;
 }
 
@@ -106,4 +146,5 @@ async function requireRole(role: UserRole) {
 export async function requireAdmin() {
   return requireRole(UserRole.ADMIN);
 }
+
 

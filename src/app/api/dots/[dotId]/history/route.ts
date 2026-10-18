@@ -22,7 +22,7 @@ export async function GET(
       );
     }
 
-    if (!["avis", "scout", "quill", "relay"].includes(dotId)) {
+    if (!["atlas", "scout", "forge", "signal", "avis", "quill", "relay"].includes(dotId.toLowerCase())) {
       return NextResponse.json(
         {
           success: false,

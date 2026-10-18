@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { Compass, ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
+import { ORBIT_AVATAR } from "@/lib/avatars";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl border border-neutral-200 p-8 text-center shadow-xs space-y-6">
-        <div className="h-16 w-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto border border-blue-100">
-          <Compass className="h-8 w-8 animate-pulse" />
+        <div className="h-16 w-16 bg-blue-50/50 rounded-2xl flex items-center justify-center mx-auto border border-blue-100 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ORBIT_AVATAR} alt="Orbit" className="h-10 w-10 object-contain" />
         </div>
 
         <div>

@@ -4,6 +4,7 @@ import { getAssessments, getAllEvidenceArtifacts, getQuillMetrics } from "@/lib/
 import { EvidenceArtifactCard } from "@/components/quill/evidence-artifact-card";
 import { Award, BookOpen, Plus, CheckCircle, Scale, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DOT_AVATARS } from "@/lib/avatars";
 
 export const metadata = {
   title: "Quill - Skills, Assessments & Evidence | OrbitMod V5",
@@ -21,15 +22,23 @@ export default async function QuillHubPage() {
       <div className="rounded-2xl border border-neutral-200 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 p-8 text-white shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                DOT 3: QUILL
-              </span>
-              <span className="text-xs text-neutral-400">Skills, Assessments & Evidence</span>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl overflow-hidden border border-neutral-700 shadow-xs flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={DOT_AVATARS.Quill} alt="Quill" className="h-full w-full object-cover" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    DOT 3: QUILL
+                  </span>
+                  <span className="text-xs text-neutral-400">Skills, Assessments & Evidence</span>
+                </div>
+                <h1 className="text-3xl font-extrabold tracking-tight">
+                  Quill: Standardized Proof of Work
+                </h1>
+              </div>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
-              Quill: Standardized Proof of Work
-            </h1>
             <p className="text-sm text-neutral-300 max-w-2xl">
               Deterministic rubric scoring, ESCO skills taxonomy normalization, and tamper-proof SHA-256 evidence generation.
               Never black-box AI grades.

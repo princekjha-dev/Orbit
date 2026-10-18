@@ -88,9 +88,11 @@ export async function FounderDashboard({ userId }: { userId: string }) {
       ),
     ]);
 
-    if (results && (results[0].length > 0 || results[1].length > 0)) {
+    const isDemoAccount = userId.startsWith("demo-") || userId.includes("demo");
+
+    if (results) {
       [startups, orgMemberships, collabRequests, candidateApps] = results;
-    } else {
+    } else if (isDemoAccount) {
       isDemoOffline = true;
       const mock = getFounderMockData();
       startups = mock.startups;
@@ -99,12 +101,15 @@ export async function FounderDashboard({ userId }: { userId: string }) {
       candidateApps = mock.candidateApps;
     }
   } catch {
-    isDemoOffline = true;
-    const mock = getFounderMockData();
-    startups = mock.startups;
-    orgMemberships = mock.orgMemberships;
-    collabRequests = mock.collabRequests;
-    candidateApps = mock.candidateApps;
+    const isDemoAccount = userId.startsWith("demo-") || userId.includes("demo");
+    if (isDemoAccount) {
+      isDemoOffline = true;
+      const mock = getFounderMockData();
+      startups = mock.startups;
+      orgMemberships = mock.orgMemberships;
+      collabRequests = mock.collabRequests;
+      candidateApps = mock.candidateApps;
+    }
   }
 
   const activeStartup = startups[0] || null;

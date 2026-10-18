@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ORBIT_AVATAR, getDotAvatar } from "@/lib/avatars";
 import {
   ShieldCheck,
   Compass,
@@ -18,10 +19,10 @@ export function OrbitModSubNav() {
 
   const navItems = [
     { label: "Overview", href: "/mod", icon: Sparkles, exact: true },
-    { label: "Avis (Trust)", href: "/mod/avis", icon: ShieldCheck },
-    { label: "Scout (Matches & Teams)", href: "/mod/scout", icon: Compass },
-    { label: "Quill (Proof of Work)", href: "/mod/quill", icon: FileCheck2 },
-    { label: "Relay (Spaces & Safety)", href: "/mod/relay", icon: MessageCircle },
+    { label: "Avis (Trust)", href: "/mod/avis", icon: ShieldCheck, dot: "avis" },
+    { label: "Scout (Matches & Teams)", href: "/mod/scout", icon: Compass, dot: "scout" },
+    { label: "Quill (Proof of Work)", href: "/mod/quill", icon: FileCheck2, dot: "quill" },
+    { label: "Relay (Spaces & Safety)", href: "/mod/relay", icon: MessageCircle, dot: "relay" },
     { label: "Spaces", href: "/mod/spaces", icon: Globe },
     { label: "Evidence Passport", href: "/mod/passport", icon: Award },
   ];
@@ -31,8 +32,9 @@ export function OrbitModSubNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
-            <div className="h-7 w-7 rounded-md bg-gradient-to-tr from-brand-700 to-indigo-600 flex items-center justify-center text-white shadow-xs">
-              <Sparkles className="h-4 w-4" />
+            <div className="h-7 w-7 rounded-md overflow-hidden flex items-center justify-center shadow-xs flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ORBIT_AVATAR} alt="Orbit" className="h-full w-full object-contain" />
             </div>
             <div>
               <span className="text-sm font-bold text-neutral-900 tracking-tight">OrbitMod V5</span>
@@ -61,7 +63,16 @@ export function OrbitModSubNav() {
                   )}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  <Icon className={cn("h-3.5 w-3.5", isActive ? "text-brand-600" : "text-neutral-400")} />
+                  {item.dot ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={getDotAvatar(item.dot)}
+                      alt={item.label}
+                      className="h-3.5 w-3.5 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <Icon className={cn("h-3.5 w-3.5", isActive ? "text-brand-600" : "text-neutral-400")} />
+                  )}
                   <span>{item.label}</span>
                 </Link>
               );
