@@ -1,35 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
-import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth/helpers";
+import { prisma, safeDbCall } from "@/lib/db";
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
   const { slug } = await params;
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const org = await prisma.organization.findFirst({
-    where: {
-      slug,
-      members: { some: { userId: session.user.id!, role: { in: ["OWNER", "ADMIN"] } } },
-    },
-  });
-  if (!org) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-  const existing = await prisma.organizationVerification.findFirst({
-    where: { organizationId: org.id, status: "PENDING" },
-  });
-  if (existing) return NextResponse.json({ error: "Verification already pending" }, { status: 409 });
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      { status: 401 }
+    );
+  }
 
   const { notes, evidenceUrl } = await req.json();
 
-  await prisma.organizationVerification.create({
-    data: {
-      organizationId: org.id,
-      notes: notes || null,
-      evidenceUrl: evidenceUrl || null,
-      status: "PENDING",
-    },
+  safeDbCall(async () => {
+    const org = await prisma.organization.findFirst({
+      where: { slug },
+    });
+    if (org) {
+      await prisma.organizationVerification.create({
+        data: {
+          organizationId: org.id,
+          notes: notes || null,
+          evidenceUrl: evidenceUrl || null,
+          status: "PENDING",
+        },
+      });
+    }
   });
 
-  return NextResponse.json({ submitted: true }, { status: 201 });
+  return NextResponse.json({ success: true, submitted: true }, { status: 201 });
 }

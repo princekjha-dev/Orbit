@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle2, Mail } from "lucide-react";
+import { GoogleButton } from "@/components/auth/google-button";
 
 const signupFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -137,81 +138,97 @@ export default function SignupPage() {
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          {/* Role selection */}
-          <div>
-            <span className="text-xs font-medium text-neutral-700 block mb-2">Account Type</span>
-            <div className="grid grid-cols-1 gap-2">
-              {roles.map((role) => (
-                <button
-                  key={role.value}
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole(role.value as "STUDENT" | "FOUNDER");
-                    setValue("role", role.value as "STUDENT" | "FOUNDER");
-                  }}
-                  className={`text-left p-3 rounded-lg border transition-colors ${
-                    selectedRole === role.value
-                      ? "border-neutral-900 bg-neutral-50"
-                      : "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/50"
-                  }`}
-                  aria-pressed={selectedRole === role.value}
-                >
-                  <p className="text-xs font-semibold text-neutral-900">{role.title}</p>
-                  <p className="text-[11px] text-neutral-500 mt-0.5">{role.description}</p>
-                </button>
-              ))}
-            </div>
+        <div className="space-y-4">
+          {/* Google Sign Up */}
+          <GoogleButton
+            mode="signup"
+            callbackUrl="/dashboard"
+            onError={(err) => setServerError(err)}
+          />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-neutral-200 w-full" />
+            <span className="bg-white px-2 text-[11px] text-neutral-400 uppercase font-medium absolute">
+              Or sign up with email
+            </span>
           </div>
 
-          <Input
-            label="Full name"
-            type="text"
-            autoComplete="name"
-            required
-            error={errors.name?.message}
-            {...register("name")}
-          />
-
-          <Input
-            label="Email address"
-            type="email"
-            autoComplete="email"
-            required
-            error={errors.email?.message}
-            {...register("email")}
-          />
-
-          <Input
-            label="Password"
-            type="password"
-            autoComplete="new-password"
-            required
-            error={errors.password?.message}
-            {...register("password")}
-          />
-
-          {serverError && (
-            <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3" role="alert">
-              <p className="text-xs text-red-700">{serverError}</p>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            {/* Role selection */}
+            <div>
+              <span className="text-xs font-medium text-neutral-700 block mb-2">Account Type</span>
+              <div className="grid grid-cols-1 gap-2">
+                {roles.map((role) => (
+                  <button
+                    key={role.value}
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole(role.value as "STUDENT" | "FOUNDER");
+                      setValue("role", role.value as "STUDENT" | "FOUNDER");
+                    }}
+                    className={`text-left p-3 rounded-lg border transition-colors ${
+                      selectedRole === role.value
+                        ? "border-neutral-900 bg-neutral-50"
+                        : "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/50"
+                    }`}
+                    aria-pressed={selectedRole === role.value}
+                  >
+                    <p className="text-xs font-semibold text-neutral-900">{role.title}</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">{role.description}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
 
-          <Button type="submit" className="w-full" loading={isSubmitting}>
-            Create account
-          </Button>
+            <Input
+              label="Full name"
+              type="text"
+              autoComplete="name"
+              required
+              error={errors.name?.message}
+              {...register("name")}
+            />
 
-          <p className="text-center text-[11px] text-neutral-400 mt-2">
-            By creating an account you agree to Orbit&apos;s{" "}
-            <Link href="/terms" className="underline hover:text-neutral-600">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="underline hover:text-neutral-600">
-              Privacy Policy
-            </Link>.
-          </p>
-        </form>
+            <Input
+              label="Email address"
+              type="email"
+              autoComplete="email"
+              required
+              error={errors.email?.message}
+              {...register("email")}
+            />
+
+            <Input
+              label="Password"
+              type="password"
+              autoComplete="new-password"
+              required
+              error={errors.password?.message}
+              {...register("password")}
+            />
+
+            {serverError && (
+              <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3" role="alert">
+                <p className="text-xs text-red-700">{serverError}</p>
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" loading={isSubmitting}>
+              Create account
+            </Button>
+
+            <p className="text-center text-[11px] text-neutral-400 mt-2">
+              By creating an account you agree to Orbit&apos;s{" "}
+              <Link href="/terms" className="underline hover:text-neutral-600">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline hover:text-neutral-600">
+                Privacy Policy
+              </Link>.
+            </p>
+          </form>
+        </div>
       )}
     </>
   );

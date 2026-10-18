@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth/config";
+import { getCurrentUser } from "@/lib/auth/helpers";
+import { prisma, safeDbCall } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim() || "";
-  const category = searchParams.get("category") || "ALL";
+  const category = (searchParams.get("category") || "ALL").toUpperCase();
 
   if (!q) {
     return NextResponse.json({
+      success: true,
       results: {
         people: [],
         opportunities: [],
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const session = await auth();
+  const user = await getCurrentUser();
 
   const searchPeople = category === "ALL" || category === "PEOPLE";
   const searchOpportunities = category === "ALL" || category === "OPPORTUNITIES";
@@ -41,136 +42,134 @@ export async function GET(req: NextRequest) {
   const searchIdeas = category === "ALL" || category === "IDEAS";
   const searchEvents = category === "ALL" || category === "EVENTS";
 
+  const dbResults = await safeDbCall(
+    () =>
+      Promise.all([
+        searchPeople
+          ? prisma.user.findMany({
+              where: {
+                isSuspended: false,
+                OR: [
+                  { name: { contains: q, mode: "insensitive" } },
+                  { username: { contains: q, mode: "insensitive" } },
+                  { profile: { headline: { contains: q, mode: "insensitive" } } },
+                ],
+              },
+              include: {
+                profile: {
+                  include: { skills: { include: { skill: true } } },
+                },
+              },
+              take: 10,
+            })
+          : Promise.resolve([] as any[]),
+
+        searchOpportunities
+          ? prisma.opportunity.findMany({
+              where: {
+                isActive: true,
+                isDeleted: false,
+                OR: [
+                  { title: { contains: q, mode: "insensitive" } },
+                  { description: { contains: q, mode: "insensitive" } },
+                ],
+              },
+              include: {
+                organization: { select: { name: true, slug: true, logoUrl: true } },
+                skills: { include: { skill: true } },
+              },
+              take: 10,
+            })
+          : Promise.resolve([] as any[]),
+
+        searchProjects
+          ? prisma.project.findMany({
+              where: {
+                isDeleted: false,
+                status: "OPEN",
+                OR: [
+                  { title: { contains: q, mode: "insensitive" } },
+                  { scope: { contains: q, mode: "insensitive" } },
+                ],
+              },
+              include: {
+                organization: { select: { name: true, slug: true, logoUrl: true } },
+                skills: { include: { skill: true } },
+              },
+              take: 10,
+            })
+          : Promise.resolve([] as any[]),
+
+        searchStartups
+          ? prisma.startup.findMany({
+              where: {
+                OR: [
+                  { name: { contains: q, mode: "insensitive" } },
+                  { description: { contains: q, mode: "insensitive" } },
+                ],
+              },
+              include: {
+                _count: { select: { members: true, milestones: true } },
+              },
+              take: 10,
+            })
+          : Promise.resolve([] as any[]),
+
+        searchCommunities
+          ? prisma.community.findMany({
+              where: {
+                OR: [
+                  { name: { contains: q, mode: "insensitive" } },
+                  { description: { contains: q, mode: "insensitive" } },
+                ],
+              },
+              include: {
+                _count: { select: { members: true, posts: true } },
+              },
+              take: 10,
+            })
+          : Promise.resolve([] as any[]),
+
+        searchIdeas
+          ? prisma.idea.findMany({
+              where: {
+                OR: [
+                  { title: { contains: q, mode: "insensitive" } },
+                  { problem: { contains: q, mode: "insensitive" } },
+                ],
+              },
+              include: {
+                creator: { select: { name: true, username: true } },
+                _count: { select: { members: true } },
+              },
+              take: 10,
+            })
+          : Promise.resolve([] as any[]),
+
+        searchEvents
+          ? prisma.event.findMany({
+              where: {
+                OR: [
+                  { title: { contains: q, mode: "insensitive" } },
+                  { description: { contains: q, mode: "insensitive" } },
+                ],
+              },
+              take: 10,
+            })
+          : Promise.resolve([] as any[]),
+      ]),
+    [[], [], [], [], [], [], []]
+  );
+
   const [
-    people,
-    opportunities,
-    projects,
-    startups,
-    communities,
-    ideas,
-    events,
-  ] = await Promise.all([
-    searchPeople
-      ? prisma.user.findMany({
-          where: {
-            isSuspended: false,
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { username: { contains: q, mode: "insensitive" } },
-              { profile: { headline: { contains: q, mode: "insensitive" } } },
-              { profile: { skills: { some: { skill: { name: { contains: q, mode: "insensitive" } } } } } },
-            ],
-          },
-          include: {
-            profile: {
-              include: { skills: { include: { skill: true } } },
-            },
-          },
-          take: 10,
-        })
-      : Promise.resolve([] as any[]),
-
-    searchOpportunities
-      ? prisma.opportunity.findMany({
-          where: {
-            isActive: true,
-            isDeleted: false,
-            OR: [
-              { title: { contains: q, mode: "insensitive" } },
-              { description: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          include: {
-            organization: { select: { name: true, slug: true, logoUrl: true } },
-            skills: { include: { skill: true } },
-          },
-          take: 10,
-        })
-      : Promise.resolve([] as any[]),
-
-    searchProjects
-      ? prisma.project.findMany({
-          where: {
-            isDeleted: false,
-            status: "OPEN",
-            OR: [
-              { title: { contains: q, mode: "insensitive" } },
-              { scope: { contains: q, mode: "insensitive" } },
-              { deliverable: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          include: {
-            organization: { select: { name: true, slug: true, logoUrl: true } },
-            skills: { include: { skill: true } },
-          },
-          take: 10,
-        })
-      : Promise.resolve([] as any[]),
-
-    searchStartups
-      ? prisma.startup.findMany({
-          where: {
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { description: { contains: q, mode: "insensitive" } },
-              { industry: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          include: {
-            _count: { select: { members: true, milestones: true } },
-          },
-          take: 10,
-        })
-      : Promise.resolve([] as any[]),
-
-    searchCommunities
-      ? prisma.community.findMany({
-          where: {
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { description: { contains: q, mode: "insensitive" } },
-              { category: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          include: {
-            _count: { select: { members: true, posts: true } },
-          },
-          take: 10,
-        })
-      : Promise.resolve([] as any[]),
-
-    searchIdeas
-      ? prisma.idea.findMany({
-          where: {
-            visibility: "PUBLIC",
-            OR: [
-              { title: { contains: q, mode: "insensitive" } },
-              { problem: { contains: q, mode: "insensitive" } },
-              { solution: { contains: q, mode: "insensitive" } },
-              { industry: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          include: {
-            creator: { select: { name: true, username: true } },
-            _count: { select: { members: true } },
-          },
-          take: 10,
-        })
-      : Promise.resolve([] as any[]),
-
-    searchEvents
-      ? prisma.event.findMany({
-          where: {
-            OR: [
-              { title: { contains: q, mode: "insensitive" } },
-              { description: { contains: q, mode: "insensitive" } },
-              { organizerName: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          take: 10,
-        })
-      : Promise.resolve([] as any[]),
-  ]);
+    people = [],
+    opportunities = [],
+    projects = [],
+    startups = [],
+    communities = [],
+    ideas = [],
+    events = [],
+  ] = dbResults || [];
 
   const totalCount =
     people.length +
@@ -182,6 +181,7 @@ export async function GET(req: NextRequest) {
     events.length;
 
   return NextResponse.json({
+    success: true,
     results: {
       people: people.map((p: any) => ({
         id: p.id,
@@ -189,7 +189,6 @@ export async function GET(req: NextRequest) {
         username: p.username,
         image: p.image,
         headline: p.profile?.headline,
-        location: p.profile?.location,
         skills: p.profile?.skills?.map((s: any) => s.skill.name) || [],
       })),
       opportunities: opportunities.map((o: any) => ({

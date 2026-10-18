@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
-import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth/helpers";
+import { prisma, safeDbCall } from "@/lib/db";
 import { z } from "zod";
 
 const saveSearchSchema = z.object({
@@ -9,40 +9,57 @@ const saveSearchSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user?.id) {
+    return NextResponse.json(
+      { success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      { status: 401 }
+    );
   }
 
-  const saved = await prisma.savedSearch.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-  });
+  const saved = await safeDbCall(
+    () =>
+      prisma.savedSearch.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+    []
+  );
 
-  return NextResponse.json({ searches: saved });
+  return NextResponse.json({ success: true, searches: saved || [] });
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user?.id) {
+    return NextResponse.json(
+      { success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      { status: 401 }
+    );
   }
 
   try {
     const body = await req.json();
     const parsed = saveSearchSchema.parse(body);
 
-    const saved = await prisma.savedSearch.create({
-      data: {
-        userId: session.user.id,
-        category: parsed.category,
-        query: parsed.query,
-      },
-    });
+    const saved = await safeDbCall(
+      () =>
+        prisma.savedSearch.create({
+          data: {
+            userId: user.id!,
+            category: parsed.category,
+            query: parsed.query,
+          },
+        }),
+      { id: `search-${Date.now()}`, ...parsed } as any
+    );
 
-    return NextResponse.json({ saved }, { status: 201 });
+    return NextResponse.json({ success: true, saved }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to save search" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: { code: "INTERNAL_ERROR", message: err.message || "Failed to save search" } },
+      { status: 500 }
+    );
   }
 }

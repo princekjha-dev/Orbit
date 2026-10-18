@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { signIn as nextAuthSignIn } from "next-auth/react";
 import { loginSchema } from "@/lib/validation/schemas";
 import { DemoAccountSwitcher } from "@/components/auth/demo-account-switcher";
+import { GoogleButton } from "@/components/auth/google-button";
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
@@ -21,7 +22,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const [serverError, setServerError] = useState<string>("");
+  const urlError = searchParams.get("error");
+  const [serverError, setServerError] = useState<string>(urlError || "");
 
   const {
     register,
@@ -90,6 +92,21 @@ function LoginForm() {
           </p>
         </div>
       )}
+
+      {/* Google OAuth Option */}
+      <div className="space-y-4 mb-4">
+        <GoogleButton
+          mode="signin"
+          callbackUrl={callbackUrl}
+          onError={(err) => setServerError(err)}
+        />
+        <div className="relative flex items-center justify-center">
+          <div className="border-t border-neutral-200 w-full" />
+          <span className="bg-white px-2 text-[11px] text-neutral-400 uppercase font-medium absolute">
+            Or continue with email
+          </span>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <Input

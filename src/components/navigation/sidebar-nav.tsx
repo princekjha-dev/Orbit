@@ -27,6 +27,7 @@ import {
   Scale,
   Activity,
   Rocket,
+  Sparkles,
 } from "lucide-react";
 
 interface NavItem {
@@ -38,6 +39,7 @@ interface NavItem {
 const ROLE_NAV_ITEMS: Record<OrbitRole, NavItem[]> = {
   TALENT: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "OrbitMod (4 Dots)", href: "/mod", icon: Sparkles },
     { label: "Action Center", href: "/action-center", icon: CheckSquare },
     { label: "Opportunities", href: "/opportunities", icon: Briefcase },
     { label: "Projects", href: "/projects", icon: FolderKanban },
@@ -51,6 +53,7 @@ const ROLE_NAV_ITEMS: Record<OrbitRole, NavItem[]> = {
   ],
   FOUNDER: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "OrbitMod (4 Dots)", href: "/mod", icon: Sparkles },
     { label: "Startup Workspace", href: "/startups", icon: Rocket },
     { label: "Opportunities", href: "/opportunities", icon: Briefcase },
     { label: "Projects", href: "/projects", icon: FolderKanban },
@@ -63,6 +66,7 @@ const ROLE_NAV_ITEMS: Record<OrbitRole, NavItem[]> = {
   ],
   RECRUITER: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "OrbitMod (4 Dots)", href: "/mod", icon: Sparkles },
     { label: "Recruiter Workspace", href: "/recruiter/workspace", icon: Search },
     { label: "Candidate Search", href: "/recruiter", icon: Network },
     { label: "Opportunities", href: "/opportunities", icon: Briefcase },
@@ -74,6 +78,7 @@ const ROLE_NAV_ITEMS: Record<OrbitRole, NavItem[]> = {
   ],
   MENTOR: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "OrbitMod (4 Dots)", href: "/mod", icon: Sparkles },
     { label: "Advisory & Reviews", href: "/action-center", icon: CheckSquare },
     { label: "Communities", href: "/communities", icon: Users2 },
     { label: "Projects & Proofs", href: "/projects", icon: FolderKanban },
@@ -85,6 +90,7 @@ const ROLE_NAV_ITEMS: Record<OrbitRole, NavItem[]> = {
   ],
   ORGANIZATION_ADMIN: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "OrbitMod (4 Dots)", href: "/mod", icon: Sparkles },
     { label: "Organization Hub", href: "/org/apex-innovations", icon: Building2 },
     { label: "Opportunities", href: "/opportunities", icon: Briefcase },
     { label: "Projects", href: "/projects", icon: FolderKanban },
@@ -96,6 +102,7 @@ const ROLE_NAV_ITEMS: Record<OrbitRole, NavItem[]> = {
   ],
   COMMUNITY_ORGANIZER: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "OrbitMod (4 Dots)", href: "/mod", icon: Sparkles },
     { label: "Communities", href: "/communities", icon: Users2 },
     { label: "Events", href: "/events", icon: Calendar },
     { label: "Hackathons", href: "/hackathons", icon: Users },
@@ -106,6 +113,7 @@ const ROLE_NAV_ITEMS: Record<OrbitRole, NavItem[]> = {
   ],
   PLATFORM_ADMIN: [
     { label: "Platform Overview", href: "/admin", icon: Activity },
+    { label: "OrbitMod (4 Dots)", href: "/mod", icon: Sparkles },
     { label: "Users & Accounts", href: "/admin/users", icon: Users },
     { label: "Verification Queue", href: "/admin/verifications", icon: FileCheck },
     { label: "Moderation & Reports", href: "/admin/reports", icon: AlertTriangle },

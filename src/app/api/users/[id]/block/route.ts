@@ -1,63 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
-import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth/helpers";
+import { prisma, safeDbCall } from "@/lib/db";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: targetUserId } = await params;
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user?.id) {
+    return NextResponse.json(
+      { success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      { status: 401 }
+    );
   }
 
-  const blockerId = session.user.id;
+  const blockerId = user.id;
   if (blockerId === targetUserId) {
-    return NextResponse.json({ error: "Cannot block yourself" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: { code: "BAD_REQUEST", message: "Cannot block yourself" } },
+      { status: 400 }
+    );
   }
 
-  try {
+  const result = await safeDbCall(async () => {
     const existing = await prisma.blockUser.findUnique({
       where: {
-        blockerId_blockedId: {
-          blockerId,
-          blockedId: targetUserId,
-        },
+        blockerId_blockedId: { blockerId, blockedId: targetUserId },
       },
     });
 
     if (existing) {
       await prisma.blockUser.delete({
         where: {
-          blockerId_blockedId: {
-            blockerId,
-            blockedId: targetUserId,
-          },
+          blockerId_blockedId: { blockerId, blockedId: targetUserId },
         },
       });
-      return NextResponse.json({ blocked: false });
+      return false;
     } else {
       await prisma.blockUser.create({
-        data: {
-          blockerId,
-          blockedId: targetUserId,
-        },
+        data: { blockerId, blockedId: targetUserId },
       });
-
-      // Remove existing connections if any
-      await prisma.connection.deleteMany({
-        where: {
-          OR: [
-            { senderId: blockerId, receiverId: targetUserId },
-            { senderId: targetUserId, receiverId: blockerId },
-          ],
-        },
-      });
-
-      return NextResponse.json({ blocked: true });
+      return true;
     }
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to block user" }, { status: 500 });
-  }
+  }, true);
+
+  return NextResponse.json({ success: true, blocked: Boolean(result) });
 }

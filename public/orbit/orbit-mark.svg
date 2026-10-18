@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="orbitMarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="50%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="orbGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#93C5FD"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#orbitMarkGrad)"/>
+  <!-- Planetary Orbit Ellipses -->
+  <ellipse cx="32" cy="32" rx="22" ry="10" stroke="#93C5FD" stroke-width="2" transform="rotate(-28 32 32)" stroke-dasharray="5 3" opacity="0.8"/>
+  <ellipse cx="32" cy="32" rx="22" ry="10" stroke="#DBEAFE" stroke-width="1.5" transform="rotate(28 32 32)" opacity="0.6"/>
+  <!-- Central Nucleus Core -->
+  <circle cx="32" cy="32" r="7.5" fill="url(#orbGlow)"/>
+  <circle cx="32" cy="32" r="3" fill="#FFFFFF"/>
+  <!-- Orbiting Satellites (The 4 Dots) -->
+  <circle cx="48" cy="24" r="3" fill="#F97316"/>
+  <circle cx="16" cy="40" r="3" fill="#10B981"/>
+  <circle cx="38" cy="46" r="2.5" fill="#A855F7"/>
+  <circle cx="26" cy="18" r="2.5" fill="#38BDF8"/>
+</svg>

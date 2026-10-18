@@ -1,50 +1,86 @@
-import { requireAuth } from "@/lib/auth/helpers";
-import { prisma } from "@/lib/db";
-import { notFound } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/helpers";
+import { prisma, safeDbCall } from "@/lib/db";
+import { notFound, redirect } from "next/navigation";
 import { MessageThread } from "@/components/chat/message-thread";
+import { DotChatView } from "@/components/chat/dot-chat-view";
+import { DotId, DOT_METADATA } from "@/lib/ai/dot-agent";
 import type { Metadata } from "next";
 
-interface PageProps { params: Promise<{ id: string }> }
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
 export const metadata: Metadata = { title: "Chat | Orbit" };
 
 export default async function ConversationPage({ params }: PageProps) {
   const { id } = await params;
-  const user = await requireAuth();
+  const user = await getCurrentUser();
+  if (!user) redirect(`/login?callbackUrl=/messages/${id}`);
 
-  // Verify user is a member
-  const membership = await prisma.conversationMember.findUnique({
-    where: { conversationId_userId: { conversationId: id, userId: user.id! } },
-  });
-  if (!membership) notFound();
+  // Check if this route is for one of the Four Coworker Dots
+  if (["avis", "scout", "quill", "relay"].includes(id)) {
+    return (
+      <div className="h-[calc(100vh-3.5rem)] lg:h-screen p-4 sm:p-6 max-w-5xl mx-auto flex flex-col">
+        <DotChatView
+          initialDotId={id as DotId}
+          currentUserId={user.id!}
+          currentUserName={user.name || "Member"}
+        />
+      </div>
+    );
+  }
 
-  const conversation = await prisma.conversation.findUnique({
-    where: { id },
-    include: {
-      members: {
-        include: { user: { select: { id: true, name: true, image: true, username: true } } },
-      },
-      messages: {
-        where: { isDeleted: false },
-        include: { sender: { select: { id: true, name: true, image: true } } },
-        orderBy: { createdAt: "asc" },
-        take: 100,
-      },
-    },
-  });
+  // Regular user-to-user or group conversation
+  const membership = await safeDbCall(
+    () =>
+      prisma.conversationMember.findUnique({
+        where: { conversationId_userId: { conversationId: id, userId: user.id! } },
+      }),
+    null
+  );
 
-  if (!conversation) notFound();
+  const conversation = await safeDbCall(
+    () =>
+      prisma.conversation.findUnique({
+        where: { id },
+        include: {
+          members: {
+            include: {
+              user: { select: { id: true, name: true, image: true, username: true } },
+            },
+          },
+          messages: {
+            where: { isDeleted: false },
+            include: { sender: { select: { id: true, name: true, image: true } } },
+            orderBy: { createdAt: "asc" },
+            take: 100,
+          },
+        },
+      }),
+    null
+  );
 
-  // Mark as read
-  await prisma.conversationMember.update({
-    where: { conversationId_userId: { conversationId: id, userId: user.id! } },
-    data: { lastReadAt: new Date() },
-  });
+  if (!conversation && !membership) {
+    // If not found in DB, return 404
+    notFound();
+  }
 
-  const otherMembers = conversation.members.filter((m) => m.userId !== user.id);
-  const title = conversation.isGroup
-    ? conversation.name || otherMembers.map((m) => m.user.name).join(", ")
-    : otherMembers[0]?.user.name || "Conversation";
+  // Mark as read in background if DB is online
+  if (membership) {
+    safeDbCall(() =>
+      prisma.conversationMember.update({
+        where: { conversationId_userId: { conversationId: id, userId: user.id! } },
+        data: { lastReadAt: new Date() },
+      })
+    );
+  }
+
+  const otherMembers = (conversation?.members || []).filter(
+    (m: any) => m.userId !== user.id
+  );
+  const title = conversation?.isGroup
+    ? conversation.name || otherMembers.map((m: any) => m.user?.name).join(", ")
+    : otherMembers[0]?.user?.name || "Direct Message";
 
   return (
     <div className="h-[calc(100vh-3.5rem)] lg:h-screen flex flex-col">
@@ -53,8 +89,8 @@ export default async function ConversationPage({ params }: PageProps) {
         currentUserId={user.id!}
         currentUserName={user.name!}
         title={title}
-        members={conversation.members as any}
-        initialMessages={conversation.messages as any}
+        members={(conversation?.members as any) || []}
+        initialMessages={(conversation?.messages as any) || []}
       />
     </div>
   );

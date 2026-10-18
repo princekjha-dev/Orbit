@@ -1,0 +1,16 @@
+{
+  "name": "Orbit",
+  "short_name": "Orbit",
+  "description": "Find credible opportunities, build real work evidence, and collaborate with coworker Dots.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,25 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
-import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth/helpers";
+import { prisma, safeDbCall } from "@/lib/db";
+import { inMemoryStore } from "@/lib/database/in-memory-store";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  try {
-    await prisma.savedOpportunity.upsert({
-      where: { opportunityId_userId: { opportunityId: id, userId: session.user.id! } },
-      update: {},
-      create: { opportunityId: id, userId: session.user.id! },
-    });
-    return NextResponse.json({ saved: true });
-  } catch {
-    return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      { status: 401 }
+    );
   }
+
+  const saveKey = `${user.id}:${id}`;
+  inMemoryStore.savedOpportunities.add(saveKey);
+
+  safeDbCall(() =>
+    prisma.savedOpportunity.upsert({
+      where: { opportunityId_userId: { opportunityId: id, userId: user.id! } },
+      update: {},
+      create: { opportunityId: id, userId: user.id! },
+    })
+  );
+
+  return NextResponse.json({ success: true, saved: true });
 }
 
 export async function DELETE(
@@ -27,15 +35,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  try {
-    await prisma.savedOpportunity.deleteMany({
-      where: { opportunityId: id, userId: session.user.id! },
-    });
-    return NextResponse.json({ saved: false });
-  } catch {
-    return NextResponse.json({ error: "Failed to unsave" }, { status: 500 });
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      { status: 401 }
+    );
   }
+
+  const saveKey = `${user.id}:${id}`;
+  inMemoryStore.savedOpportunities.delete(saveKey);
+
+  safeDbCall(() =>
+    prisma.savedOpportunity.deleteMany({
+      where: { opportunityId: id, userId: user.id! },
+    })
+  );
+
+  return NextResponse.json({ success: true, saved: false });
 }

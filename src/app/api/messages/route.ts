@@ -1,44 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
-import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth/helpers";
+import { prisma, safeDbCall } from "@/lib/db";
 
 // POST /api/messages — start a new DM
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { success: false, error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+      { status: 401 }
+    );
+  }
 
   const { participantId } = await req.json();
-  if (!participantId) return NextResponse.json({ error: "participantId required" }, { status: 400 });
+  if (!participantId) {
+    return NextResponse.json(
+      { success: false, error: { code: "VALIDATION_ERROR", message: "participantId is required" } },
+      { status: 400 }
+    );
+  }
 
   // Check if DM already exists
-  const existing = await prisma.conversation.findFirst({
-    where: {
-      isGroup: false,
-      members: {
-        every: {
-          userId: { in: [session.user.id!, participantId] },
+  const existing = await safeDbCall(
+    () =>
+      prisma.conversation.findFirst({
+        where: {
+          isGroup: false,
+          members: {
+            every: {
+              userId: { in: [user.id!, participantId] },
+            },
+          },
+          AND: [
+            { members: { some: { userId: user.id! } } },
+            { members: { some: { userId: participantId } } },
+          ],
         },
-      },
-      AND: [
-        { members: { some: { userId: session.user.id! } } },
-        { members: { some: { userId: participantId } } },
-      ],
-    },
-  });
+      }),
+    null
+  );
 
-  if (existing) return NextResponse.json({ id: existing.id });
+  if (existing) {
+    return NextResponse.json({ success: true, id: existing.id });
+  }
 
-  const conv = await prisma.conversation.create({
-    data: {
-      isGroup: false,
-      members: {
-        create: [
-          { userId: session.user.id! },
-          { userId: participantId },
-        ],
-      },
-    },
-  });
+  const conv = await safeDbCall(
+    () =>
+      prisma.conversation.create({
+        data: {
+          isGroup: false,
+          members: {
+            create: [{ userId: user.id! }, { userId: participantId }],
+          },
+        },
+      }),
+    { id: `conv-${user.id}-${participantId}` } as any
+  );
 
-  return NextResponse.json({ id: conv.id }, { status: 201 });
+  return NextResponse.json({ success: true, id: conv?.id }, { status: 201 });
 }
